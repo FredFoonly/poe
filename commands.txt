@@ -1,0 +1,609 @@
+
+--------------------
+--------------------
+Commands
+--------------------
+--------------------
+
+Most of this came from the PE1 manual.  Need to check the PE32 manual
+and the PE2.PRO to make sure I'm not missing any.
+
+
+--------------------
+Change <char>src<char>dst<char>[-*m]
+c ...
+
+Ignores marked region.  '-' reverses the direction of the search., '*'
+does a global replace. 'm' restricts the change to the marked region.
+
+--------------------
+def key = '<literal>' | '[' <function> ']'
+
+--------------------
+dir <globname>
+
+loads directory into .DIR buffer.
+
+--------------------
+edit <file> [notabs]?
+e ...
+
+Edits a file, if it's already loaded then switches buffer.  If notabs
+is specified, then doesn't do tab expansion.  Tab expansion is on 8 char
+stops, but doesn't extend past first quote on a line.
+
+--------------------
+erase <filename>
+
+deletes a file from disk
+
+--------------------
+file <filename> [notabs]?
+
+Saves the current buffer to the file.  If notabs is specified, doesn't
+do tab compression.  If tab compression is performed, doesn't extend
+past first quote on a line.
+
+--------------------
+locate <char><pattern><char> [-]
+l
+
+'-' reverses the direction of the search.
+
+--------------------
+macro <filename>
+
+runs the commands in the file.  One command per line (def key=... is
+one command)
+
+--------------------
+name <filename>
+n
+
+renames the current buffer (and file associated with it).
+
+--------------------
+print
+p
+
+Prints the current buffer.
+
+--------------------
+? tabs | margins | key <keyname> | memory
+
+Query the parameter.  Tabs and margins goes to the command line in the
+form of a set tabs or set margins command.  ? key goes to the command
+line in the form of a def <keyname>.  ? memory goes to the message
+line.  I'm not sure ? memory makes much sense, but I guess on a 32-bit
+machine it can still be important, especially if it's something really
+tiny like a router.
+
+--------------------
+quit [all]
+q
+
+stops editing the current buffer and removes it from memory.  If it
+has changed, then the user is prompted "Are you sure? Type y or n" in
+the status area. If this is the last bufer, the editor exits.
+
+[quit all] keeps executing [quit] until all buffers are closed, then exits.
+
+--------------------
+rename <srcglob> <dstglob>
+
+Basically does a DOS rename - it renames files on disk only, *not* in
+buffer area.
+
+--------------------
+save [<filename> [notabs]]
+
+Saves the current buffer, but keeps it in memory.  If a filename is
+given, the buffer is written to that new name.  If notabs is given, then
+the file is not tab compressed.
+
+--------------------
+set blankcompress [on|off]
+
+--------------------
+set display mono [<rows> <cols>]
+set display color [<rows> <cols>]
+s display ...
+
+Was useful under DOS (especially with the Hercules cards), but not
+useful under Unix.
+
+--------------------
+set margins n n [n]
+
+Sets left and right margins, and optionally paragraph margin.
+
+--------------------
+set tabs t1 t2 t3 ... t20
+
+Sets up to 20 tab stops, must be in ascending order.  1-based numbering.
+
+
+--------------------
+--------------------
+Functions
+--------------------
+--------------------
+
+
+--------------------
+backtab
+
+Moves the cursor to the previous tab stop.
+
+--------------------
+backtab word
+
+Moves the cursor to the left, stopping at the first characer in the
+previous word.  Will wrap to the previous line.
+
+--------------------
+begin line
+
+Move the cursor to column 1 of the current line.
+
+--------------------
+begin mark
+
+Move the cursor to the beginning of the marked area.  If it's in a
+different buffer, will switch to the marked buffer first.
+
+If it's a line mark, simply moves the cursor to the top marked line,
+column stays same.  If it's a character mark, moves to first
+character.  If it's a block mark, moves to upper left corner of the
+rectangle.
+
+--------------------
+bottom
+
+Moves the cursor to the last line of the file
+
+--------------------
+bottom edge
+
+Moves the cursor to the last visible line.
+
+--------------------
+center line
+
+Moves the line with the cursor to the middle of the screen.  Does not
+shift viewport left/right.
+
+--------------------
+command toggle
+
+Toggles the cursor between text area and command area.
+
+--------------------
+confirm change
+
+Confirms a replace operation.  I don't think is is a regular command -
+I think this just marks that key as the confirmation key.
+
+--------------------
+copy mark
+
+copies the marked area to the cursor location, leaving the original
+mark in place.
+
+For line marks - inserts the lines after the cursor line.
+For block marks, shifts the lines starting at the cursor position
+right.
+for character marks, inserts at cursor position.
+
+--------------------
+copy to command
+copy the marked contents to the command line
+
+--------------------
+cursor command
+
+Moves the cursor to the command area.  The cursor position in the text
+are is hilighted (inverts that char).
+
+--------------------
+cursor data
+
+Moves the cursor to the text are.
+
+--------------------
+delete char
+
+Deletes the character under the cursor, shifting the rest of the line
+left.  Does not join lines.
+
+--------------------
+delete line
+
+Deletes the current line, shifting the rest up.  No-op if cursor is on
+command line.
+
+The line is copied to the .unnamed buffer before modification.
+
+--------------------
+delete mark
+
+Line marks - deletes the lines as though the appropriate number of
+[delete line] operations had been done.
+
+Block marks - text is shifted left by the width of the block.
+
+Character marks - whole lines are deleted, first and last line are
+joined.
+
+The lines are copied to the .unnamed buffer before modification.
+
+--------------------
+down [<n>]
+
+Moves the cursor n (default 1) rows down.  If at bottom, scrolls viewport up one
+line.  Does not add lines at end.
+
+When cursor is on the command line, it switches to the text area,
+moves to the last visible line, then moves down.
+
+--------------------
+end line
+
+Moves the cursor to the last character on the line.  If spaces exist
+at the end of the line they are considered part of the line.
+
+--------------------
+end mark
+
+Moves the cursor to the end of the marked area.
+
+--------------------
+erase begin line
+
+Deletes characters from the cursor to the beginning of the line.  The
+line is shifted right, but the cursor position does not move.  The
+line is copied to the .unnamed buffer before erasing.
+
+--------------------
+erase end line
+
+Deletes characters from the cursor to the end of the line.  The line
+is copied to the .unnamed buffer before erasing.
+
+--------------------
+escape <code>
+
+Lets you type in ASCII codes in decimal - should probably allow
+unicode as as well.  Without the code, prompts the user.  With the
+code, inserts the resulting character at the cursor position.
+
+--------------------
+execute
+
+Executes the text on the command line.  If the cursor is in the
+command area, this is always the action on the enter key.
+
+--------------------
+fill mark <char>
+
+Fills the marked area with the character.  If no character is
+specified, prompts the user.
+
+--------------------
+find blank line
+
+Searches for the next blank line.  If the current line is blank, the
+cursor doesn't move.  If no more blank lines are found, tell the user
+and cancel the rest of the macro.
+
+--------------------
+first nonblank
+
+Moves the cursor to the first nonblank character on the line.  If the
+line is blank, moves to the first column.
+
+--------------------
+indent
+
+Moves the cursor to the paragraph margin, or the left margin if there
+isn't one.
+
+--------------------
+insert line
+
+Adds a new line below the current line.
+
+--------------------
+insert mode
+
+Puts the editor into insert mode.  This really only affects typed
+characters -- copy/copy/paste and backspace/delete are modeless.
+
+--------------------
+insert toggle
+
+Toggles between insert and overwrite modes.
+
+--------------------
+join
+
+No-op in command area.
+
+Joins this line and the next one.  Cursor can be anywhere on the
+line.  Leading/Trailing whitespace is preserved.
+
+Both lines are copied to the .unnamed buffer before joining.
+
+--------------------
+left [<n>]
+
+Moves the cursor n (default 1) positions to the left.  Does not
+line-wrap.
+
+--------------------
+left edge
+
+Moves the cursor to the leftmost column of the viewing area.
+
+--------------------
+lowercase
+
+Lowercases all text in teh marked area.  If there isn't a mark, the
+message "No marked area" is displayed.
+
+--------------------
+mark block
+
+Tags one corner of a block mark.  Get an error message if there is
+another marked block in either another file, or if there is an
+incompatible mark type in this file.  It appears the marks are
+chronologically ordered until they are used (the second mark can be
+repositioned, but the first mark is fixed).
+
+--------------------
+mark char
+
+Tags one end of a char mark.
+
+--------------------
+mark line
+
+Tags one end of a line mark.
+
+--------------------
+move mark
+
+Line mark - Inserts the marked area below the cursor position, deleting
+the original.
+
+Block mark - Inserts the marked rectangle at the cursor position,
+moving the rest of each of the lines to the right.
+
+Character mark - Inserts in front of the cursor.
+
+In each case, the original lines (not just the marked area) are copied
+to .unnamed.
+
+--------------------
+overlay block
+
+Mark type must be block, or user gets the messsage "Not a block mark".
+
+Overwrites the rectangle at the cursor position.
+
+--------------------
+page down
+
+Scrolls the display down by the number of lines in the viewport (minus
+2).  If there aren't enough lines, the viewport is moved far enough to
+show the '==== Bottom of file ====" line, and the cursor position
+doesn't change.  Because of this, multiple page downs followed by the
+same number of page ups will return the cursor to the original line
+(unless you hit page down while at the bottom of the file).
+
+--------------------
+page up
+
+Similar to page down, except for "==== Top of file ====".
+
+--------------------
+pop mark
+
+Restores the current mark from the mark stack (if it is not empty).
+
+--------------------
+push mark
+
+Pushes the current mark to the mark stack, and clears the current mark.
+
+For line and char marks, their bounds are adjusted as the text is
+edited.  Rectangle mark endpoints are not adjusted.
+
+--------------------
+redraw
+
+Redraws the screen.
+
+--------------------
+reflow
+
+Requires a line mark. Reformats the marked area to fit within the
+margin.  The cursor position doesn't change.  The first line honors
+the paragraph margin, the rest honor the left/right margins.
+
+The text is copied to the .unnamed buffer before reflowing.
+
+Under normal typing, the text is word-wrapped, but normally the right
+margin is set very high (255 or so) so you don't see this.
+
+--------------------
+replace mode
+
+Sets the editor into overstrike mode.  This really only affects
+characters that are typed, not cut/copy/paste or backspace/delete.
+
+--------------------
+right <n>
+
+Moves the cursor n (default 1) positions to the right.  If it scrolls
+off the viewport, the screen is recentered horizontally.
+
+--------------------
+right edge
+
+Moves the cursor to the rightmost visible column.
+
+--------------------
+rubout
+
+Deletes the character to the left of the cursor, and closes down the
+line.  This happens in both insert and overstrike modes.
+
+--------------------
+shift left <n>
+
+Shifts the marked area left n (default 1) chars.  This works for all
+mark types - each line is shifted left at the leftmost marked char.
+
+The lines are copied to .unnamed before shifting.
+
+--------------------
+shift right <n>
+
+Shifts the marked area right n (default 1) chars.  This works for all
+mark types - each line is shifted right at the leftmost marked char.
+
+The lines are copied to .unnamed before shifting.
+
+--------------------
+split
+
+Splits the current line at the cursor position.
+
+The line is copied to .unnamed before splitting.
+
+--------------------
+tab
+
+Moves the cursor to the next tab stop.
+
+--------------------
+tab word
+
+Moves the cursor to the start of the next word.  Will move to the next
+line if necessary.
+
+--------------------
+top
+
+Moves the cursor to the top line of the file.  Does not change the
+column position.
+
+--------------------
+top edge
+
+Moves the cursor to the topmost visible line.
+
+--------------------
+undo
+
+Restores the current line to the text at the time you moved to it.
+
+--------------------
+unmark
+
+Removes any mark from any buffer.
+
+--------------------
+up
+
+Moves the cursor one line up.
+
+If the cursor was in the command area, it moves to the bottom visible
+line.
+
+--------------------
+uppercase
+
+Uppercases the marked region.
+
+
+
+
+
+================================================
+Other pe2 commands
+
+--------------------
+split screen
+
+1st split - split-screens vertically (2 viewports) [|]
+2nd split - split-screens horizontally (4 viewports) [+]
+3rd split - splits the 1st two screens horizontally (2 viewports) [-]
+4th split - returns to 1 screen. [ ]
+
+Each viewport gets own command area.
+
+--------------------
+zoom window
+
+Current view becomes full-screen.
+
+--------------------
+next window
+
+Cycles to the next viewport.
+
+--------------------
+next view
+
+Cycles to the next viewport on this file.
+
+--------------------
+line <line> [<col>]
+l
+
+--------------------
+column <col>
+cl
+
+--------------------
+clear marks
+
+clear the mark stack, including the current mark
+
+--------------------
+mark backtab
+
+align marked area to previous tab column
+
+--------------------
+mark tab
+
+align marked area to next tab column
+
+
+--------------------
+rubout join
+
+Deletes the character to the left of the cursor, and closes down the
+line.  This happens in both insert and overstrike modes.  If the
+cursor was at the start of line, go to the end of the previous line
+and join the two lines.
+
+--------------------
+trim
+
+Line mark only - trim leading and trailing spaces from marked lines.
+
+--------------------
+trim leading
+
+Line mark only - trim leading spaces from marked lines.
+
+--------------------
+trim trailing
+
+Line mark only - trim trailing spaces from marked lines.
+
+

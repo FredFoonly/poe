@@ -1,0 +1,71 @@
+
+x Comment out unused buffer and cstr functions
+x Cache most recent (markid, markpt) in find_mark
+x Cache most recent (bufid, bufptr) in find_buffer
+x Add cursor position query and move for cursor marks
+x Write buffer load and save with and without tab compression
+x Write unit tests for mark stack.
+x Write basic viewport, no cmdline yet.  View takes keystrokes
+  and does the right thing to the buffer, and handles redisplay.
+x Make buffer insert and update functions update marks
+x Make sure the editing functions update the mark positions.
+x Get resize to work.  This is usually a pain.
+x Implement F8=[next buffer] to cycle buffers.
+x Implement window split, zoom, next win, next view.
+x Make sure the editing functions are sanitized when in command
+  buffer.
+x Fix the rxvt Esc-Escxyz for alt-functions by defining them in the
+  curses setup.  And get rid of the current complex implementation of
+  alt handling/modifier merging & sorting, etc.  Just becomes a simple
+  table of keynum->keyname.  Sort this table at init_getkey time, and
+  binary search it to look up keys.
+x Implement stash-to-unnamed for all multiline operations.
+x Smarten up display logic around marks - bool
+  markxxx_hittest_line(buf, line, &c1, &c2)
+x Change mark table to a hash table (close enough - I'm using a
+  direct-mapped hash table as a cache).
+x Finish mark functions (insert mark, overlay mark, fill mark).
+
+_ In keyboard interpreter, save current line if the linenum is
+  different from last time.  This gets used by the simplistic
+  PE2-style undo command.
+
+x Implement load command.
+x Implement save command.
+x Implement file command.
+x Implement quit command.
+x Implement basic cmdline parser, needs load/save/file/quit at minimum.
+x Implement locate.
+x Implement replace.  Make it take a list of key names to use for confirmation.
+x Implement copy to command, copy from command, and execute.
+
+_ In cmd_chr, after word-wrapping, if the character before the cursor 
+  isn't space (or cursor is at BOL) then insert the space again since 
+  it was deleted by the word-wrap.
+
+_ Separate the concepts of tabsize used for blank compression/expansion, and 
+  the tabs used for tabbing around in the text.  "SET TABEXPAND n" instead 
+  of "SET TABEXPAND ON/OFF".  
+
+_ lock current mark once a non-movement command is received, so it can't 
+  be extended.
+
+_ improve reporting of invalid commands, either at def time or execute 
+  time.  Unrecognized commands should be displayed in the message line.
+
+_ add a "SET WRAP ON/OFF" command.
+
+_ add mouse support.  Window selection + cursor positioning at a minimum.
+
+_ Enjoy for few days to make sure everything works ok.
+_ Implement full command parser.
+_ Implement global poe.pro
+_ Change line array to a gap buffer.
+_ Look at swapping musl for glibc to reduce size.  Also, can we
+  statically link with ncurses?
+_ Implement dynamic keybinding of curses keys.
+_ Enjoy
+
+_ Implement .unnamed window as edit diffs
+_ Implement file-extension-specific profiles (alternately, search up
+  dir tree for poe.pro)

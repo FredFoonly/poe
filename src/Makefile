@@ -1,0 +1,30 @@
+
+include ../Makefile.inc
+
+CFLAGS = $(PRJCFLAGS)
+EXE = ../bin/poe
+OBJS = main.o utils.o poe_err.o poe_exit.o trace.o logging.o vec.o cstr.o tabstops.o margins.o mark.o markstack.o buffer.o view.o getkey.o commands.o key_interp.o cmd_interp.o default_profile.o editor_globals.o window.o parser.o
+OBJLIBS = 
+LIBS = -L. -lncurses
+
+all: $(EXE)
+
+test :
+
+$(EXE) : $(OBJS) $(OBJLIBS)
+	$(LD) -o $(EXE) $(OBJS) $(LIBS)
+
+clean :
+	$(ECHO) cleaning up in .
+	$(RM) -f $(EXE) $(OBJS) $(OBJLIBS)
+	$(RM) -f *.s
+	-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
+
+install :
+	$(ECHO) installing poe to $(PREFIX) .
+	cp $(EXE) $(PREFIX)/bin/poe
+
+uninstall :
+	$(ECHO) uninstalling poe from $(PREFIX) .
+	rm $(PREFIX)/bin/poe
+

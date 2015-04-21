@@ -1,0 +1,4 @@
+#! /bin/ksh
+
+./bin/poe -logmsg -escdelay 100  $HOME/poe/test/t1inv.txt $HOME/poe/test/t1.txt $HOME/poe/test/t1_rdonly.txt $HOME/poe/test/t2.txt
+

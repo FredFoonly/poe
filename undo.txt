@@ -1,0 +1,13 @@
+
+undo/redo record:
+
+		  Move Cursor - buffer@(x1,y1) (x2,y2)
+
+		  Replace text - buffer@(x1,y1) (x2,y2) "orig" "new"
+
+		  Insert Line -  buffer@(x1,y1) (x2,y2)
+
+		  Delete Line - buffer@(x1,y1) (x2,y2) "orig"
+
+
+Each keystroke can generate a list (or maybe a rose tree) of these.

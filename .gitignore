@@ -1,0 +1,8 @@
+*~
+a.out
+*.o
+*.core
+poe
+poetest
+*.err
+*.log

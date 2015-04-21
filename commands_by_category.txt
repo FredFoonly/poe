@@ -1,0 +1,142 @@
+
+----------
+buffer mutation
+----------
+change
+*chr
+*delete char
+*delete line
+*delete mark
+*erase begin line
+*erase end line
+*escape
+*fill mark
+*insert line
+*join
+*lowercase
+*reflow
+*rubout
+*rubout join (pe32)
+*split
+*shift left
+*shift right
+*trim (pe32)
+*trim leading (pe32)
+*trim trailing (pe32)
+*str
+undo
+*uppercase
+center in margins
+*copy mark
+*move mark
+*overlay block
+
+----------
+cursor movement
+----------
+*locate
+*backtab
+*backtab word
+*begin line
+*begin word
+*begin mark
+*bottom
+*bottom edge
+*center line
+*column
+*down
+*end line
+*end mark
+*end word
+*find blank line
+*first nonblank
+*indent
+*left
+*left edge
+*line
+*move view down
+*move view left
+*move view right
+*move view up
+*page down
+*page up
+*right
+*right edge
+*tab
+*tab word
+*top
+*top edge
+*up
+
+----------
+marks
+----------
+*mark block
+*mark char
+*mark line
+*pop mark
+*push mark
+*unmark
+*clear marks (pe32)
+mark tab (pe32)
+mark backtab (pe32)
+
+----------
+views
+----------
+*split screen
+*next view
+*next window
+*zoom window
+
+----------
+Files/Buffers
+----------
+*next file
+*edit
+*file
+name
+*save
+*quit
+*qquit
+
+----------
+Command Line
+----------
+*command toggle
+copy to command
+copy from command
+*cursor command
+*cursor data
+*execute
+
+----------
+DOS
+----------
+rename
+dir
+delete
+
+----------
+Misc
+----------
+*? tabs
+*? margins
+*? key <keyname>
+*? blankcompress
+*? tabexpand
+? char
+*set margins
+*set tabs
+*set blankcompress [on|off]
+*set tabexpand [on|off]
+set display
+*confirm change -- this I think could be removed, just use 'y'/'n'.
+		 'save buffer' already does.
+
+*insert mode
+*insert toggle
+*redraw
+*resize display
+*replace mode
+

@@ -1,0 +1,474 @@
+
+POE
+[Parkers|Personal] [Own|Openbsd] Editor
+
+
+============================================================================
+Rationale
+
+The idea here is to replicate the flavor of PE2, which is an old very
+fast DOS based programmers editor that came out of IBM, but in a more
+modern and more flexible way.  Most modern editors are either
+line-based (VI) or stream based (emacs), but PE2 wasn't really either.
+The PE2 editing model is simply a 2d array of characters, space-
+extended out to the right and down.  There are tab stops but tab
+characters are discouraged - the usual approach is to convert tabs to
+spaces when the file is loaded, and convert back to tabs when it is
+saved.  Basically tabs are treated as a compiler-supported compression
+scheme.  Tab stops are very flexible, you can set them at any
+arbitrary column, or at regular intervals, or a combination of the
+two.
+
+It's an editing model that I've only ever seen in IBM-style editors
+(SPF, XEDIT, PE2, and OS/2 E3).  The only IBM-style editors still
+readily available are PE32 (Windows) and THE (Windows, misc Unix).
+PE32 isn't portable and is built with VB.  THE is a heavyweight editor
+comparable to Emacs, and it retains too many IBM mainframe-isms (like
+treating code as a series of screens, and redundant commands for
+binding to keys vs commands intended for use from the command line).
+Slickedit also has some characteristics of this family - it was
+apparently written by the author of E3 - but it's missing the flexible
+command line and the supremely easy key definitions of PE2, and it's
+not available on all the operating systems I prefer.  It's also a very
+heavyweight editor.
+
+This cartesian editing model was inherited from the IBM mainframes and
+especially their rather nifty smart terminals that were closer in
+spirit to an HTML web browser than to a VT100 terminal.  The editor
+sent the text and tabstops to the terminal and then the terminal would
+let you move around and type without involving the mainframe at all,
+and when you hit the submit button the terminal would send the text
+back to the mainframe for the editor process to actually apply your
+changes, run whatever was on the command line, etc.  Because almost
+all the interactivity happened on the terminal which had no real idea
+of what it was displaying, this meant that the UI was based on the
+terminal's (line, column) addressing.
+
+By contrast, the Unix screen editors (VI, Emacs) used extremely dumb
+VT1xx and similar terminals.  There was a higher level of interaction
+between the terminal and the computer.  This allowed the computer to
+more fully control the all the interactions between the user and text.
+Partly due to the Unix philosophy of "every file's just a sequence of
+bytes", their editors also tended to view the buffer as an array of
+characters.  Translation into lines happens relatively late at display
+time.
+
+The difference comes out in the way a cursor position on the screen
+and a character in the buffer are mapped onto each other.  There are
+three coordinate systems in use within a text editor:
+
+Screen cartesian coordinate
+Logical buffer coordinate
+Physical buffer coordinate
+
+Cartesian editors map from screen coordinate to logical buffer
+coordinate; string editors map from logical buffer coordinate to
+screen coordinate.  In theory it's possible for an editor to use
+physical buffer coordinates as it's primary addressing mode, but I'm
+not aware of any that actually do this.  GNU Emacs might, because it's
+gap buffer structure is sufficiently simple that the mapping between
+logical and physical buffer coordinates is really trivial.
+
+An editor that uses Logical Buffer Coordinates internally has
+difficulty placing the cursor anywhere except on an existing
+character, or at the end of a line or file.  The area beyond the end
+of a line or below the last line in a buffer simply doesn't exist in
+it's model.
+
+On the other hand, and editor that uses Screen Coordinates must deal
+with the situation where it is asked to perform an operation at an
+address that doesn't exist in its logical buffer coordinate system.
+This easily handled by space-extending the line or buffer to encompass
+the cartesian coordinate.
+
+The effect of this addressing decision is most strongly seen in GNU
+Emacs, which displays your position in the file as a percentage, and
+getting your line number requires emacs to scan throught the buffer
+counting newlines.  Vi stores its buffers internally as an array of
+lines so it can show you the line number, but within a line it acts
+like emacs - the Vi cursor coordinate system is (line, character
+index).
+
+This seems like a simple distinction, but it really changes the feel
+of the editor.  Cartesian editors feel like you're editing on a very
+large, intelligent whiteboard.  Some cartesian editors even have
+commands for drawing ascii diagrams, which is extremely handy for
+doing pictorial comments showing how the data structures are being
+manipulated.  This cartesian editing model also makes line and
+rectangular operations extremely easy.  PE2 was probably the best
+editor for writing column-sensitive languages like Assembly (what I
+mostly used it for) and Fortran, and was still very good at
+free-flowing languages like Pascal, Modula-2, and C.
+
+Column sensitivity was considered an archaic language feature by the
+late 70's, but was resurrected in the mid-to-late 80's by three
+languages (Occam, Python, and Haskell) that treated whitespace as
+syntax.  In the late 2000's another wave of languages with this
+feature included F# and Nim.  Since none of these languages were
+available on DOS where the PE2 users were (or had been), PE2 (and
+PE32) use dried up and it pretty much disappeared from history.  Since
+then of course Python has become extremely popular, and Haskell and F#
+aren't doing too shabby either.  In the absense of the IBM-style
+editors, the Python, Haskell, and Go programmers get by with VI and
+Emacs.  Neither are particularly well suited for the role but are beat
+into it with extensive macro customization.  It seems like something
+like an improved PE2 may be an editor whose time has returned.  I sure
+miss it like heck.
+
+Of the IBM-style editors, the one I used the most was PE/PE2.  It is
+probably the simplest of the IBM-style editors.  It didn't support
+'all' or line folding, and had a very simple macro language with no
+control structures or variables.  But it was very small (PE was about
+50k, and PE2 was 72K) and very very fast, and the simple macro
+language was extremely simple to use, I usually kept a couple of keys
+around just for defining quick specialized macros.  You could mark a
+section of the buffer and execute it as a single macro, so I would put
+document-specific macros in a comment at the top of the file.
+
+There's a version of PE2 on Windows called PE32 (PE64) but it's
+unlikely to be portable, as it's written to Win32, and uses VBA as its
+macro language.  It also doesn't feel "right" to me for some reason,
+which I originally assumed was due to rust since I hadn't used DOS PE2
+in nearly a decade.  But when I ran DOS PE2 in DosBox the old muscle
+memory came right back; while in PE32 I kept having to refer to the
+manuals even though the keys are basically the same (you can load PE2
+profiles into PE32).  Unfortunately I'm not sure why this was.
+
+PE2 supports line marks (ctrl-l), char marks (ctrl-c), and block marks
+(ctrl-b).  Whichever style you use, the same key both starts and
+extends a mark.  You cannot switch mark types without unmarking
+(ctrl-u).  There is one mark for the entire editor, not per buffer or
+per view.  This is different from emacs and most modern editors.  This
+feature is used for moving text between buffers - you can mark in one
+buffer and insert/move/overwrite to another.  Since region operations
+save their text to the .unnamed buffer, this is used to recover from
+mistakes.
+
+You can switch windows with ctrl-w, and can switch views of the
+current buffer with ctrl-v, so if you have 4 windows up, and 2 of them
+are on the same buffer, you can easily switch back and forth between
+just those two.  You can "zoom" to a view with ctrl-z.  Any window can
+show any buffer, and keeps its own viewport and cursor positions
+independent of any other window.
+
+The Enter key does not insert a new line, it merely moves to the first
+nonblank character of the next line (again, it's a cartesian editor,
+not really a string editor).  You can insert a new line with F9, or a
+"smart new line" with F10, which inserts a new line and aligns the
+cursor with the start of the previous non-blank line.  Ctrl-F1 through
+Ctrl-F10 would insert between 1 and 10 blank lines.  For the profiles
+intended for non-Assembler work, I defined the enter key to do the
+"smart" newline-and-indent.  You can split a line with alt-s, and join
+lines together with alt-j.
+
+The heavy use of function keys was fairly convenient on the original
+IBM PC keyboard, which had the function keys to the left of the main
+keyboard in easy range of your pinky.  It is much less convenient
+nowadays with the function keys strung out across the top.
+
+There were a number of keys for really rocketing around in the file.
+Ctrl-N would move down 60 lines, and ctrl-left and ctrl-right would
+move 40 chars.  None of these are magical, you could do the same thing
+in emacs or vi, except that they don't really work usably unless
+you're in a simple cartesian space.  e.g. emacs will go to the next
+line if you go too far right, so instead of going to column 60 of the
+current line you wind up two lines down in column 4.  All this is
+"fixable" in emacs with enough macros (and years ago I did this in
+epsilon - an emacs-like editor - for an asm-mode), but it's pretty
+annoying to make it work right.  It's even worse to make it work
+consistently, because knowledge of the string model is pretty
+thoroughly baked in throughouti emacs.  VI is nearly as bad - it will
+simply stop at the end of the line; you have to switch to append mode
+and insert enough spaces to get where you want to go.
+
+PE2 block regions can be shifted left or right.  All region types can
+be filled with a character.  Instead of the current fashion where you
+cut a region and then paste from the clipboard, PE2 accomplishes this
+by supporting a variety of region operations like move, copy, and
+overlay, which work across buffers.  So you can mark a region in one
+buffer then switch to another buffer and the copy command will insert
+it at the cursor position.  There is no clipboard per se, though the
+last block operation saves any destroyed text in the special
+".unnamed" buffer.  There is also no undo in PE2 or most IBM-style
+editors (due to the influence of smart-terminal based editing), though
+the PE2 ".unnamed" buffer could be used to recover from major
+mistakes.  But there's no reason that undo can't be implemented in a
+modern cartesian editor (Slickedit does it, and I think THE may do it
+now as well).
+
+One other nicety of PE2 that isn't present in more mainframe-style
+cartesian editors like THE and Kedit is automatic word-wrap.  In PE2
+this was always enabled, though you could "disable" it by setting the
+right margin to some really large value like 255.  But it meant you
+could set your right margin at 78 or so and even when coding it would
+wrap your code.  It wouldn't do smart indenting in this mode, but this
+wouldn't be hard to add to a more modern version (it would just have
+to execute the "smart newline" key when it wraps, which could then be
+defined differently for word processing vs code).
+
+
+============================================================================
+Potential buffer models:
+
+------------------
+Gap buffer (Emacs)
+------------------
+
+Extremely simple, very fast on modern architectures.  Difficult to map
+cursor x,y to buffer position, easy to map linear index to buffer
+address.  It is possible with some work to speed up cartesian
+addressing using a line array as an index.  This tends to encourage
+you into a stream-oriented editor.  Loading and saving requires
+minimal processing since the text is in at most two contiguous chunks.
+There it is possible to pull off cartesian addressing with this model,
+but it requires a lot of work to manage the mismatch.
+
+
+---------------------------
+Array (or list) of lines (VI)
+---------------------------
+
+Also extremely simple.  Easy to map cursor x,y to buffer, difficult to
+map linear index to buffer address, which tends to lead to a more
+line-oriented editor.  Loading and saving requires a fair bit of
+processing to parse the lines and allocate the memory for each line.
+VI was written in an era when file sizes were generally less than 10
+Kb and machine RAM was in the area of 1 Mb or so.
+
+
+------------------------------
+Array of gap buffers (Epsilon)
+------------------------------
+
+Improved locality compared to gap buffer, with strict upper bounds on
+insertion cost.  Much more complex to get right, and makes address
+mapping generally much more difficult.  For random addressing, both
+x,y and linear addressing are comparable in difficulty.  For relative
+addressing it's pretty reasonable.  To efficiently support random
+addressing, each gap buffer retains the x,y or linear index of the
+start of the block, and these are binary searched to get the
+containing block, then searched within that block to finish the
+address translation.  This structure makes manual virtual memory easy
+to implement, and back in the DOS days I was quite fascinated with
+this structure, using it to write an editor in Modula-2.  Pervasive,
+real virtual memory makes this obsolete.  Epsilon is still my favorite
+editor though.
+
+
+------------------
+Rope (Bravo)
+-------------------
+
+Tree of slices of multiple text buffers.  Really needs GC to implement
+it - the only environments where this structure is available in
+anything like it's canonical form are based on GC heaps.  The original
+rope structure was written in Mesa/Cedar at Xerox and used in their
+Bravo editor, later both Modula-3 and the Boehm C garbage collection
+library contained versions of the Rope structure.
+
+The rope is extremely complicated, but big-O efficiency is very high,
+and it allows full integration of style markers within the buffer.  It
+doesn't really get used anymore due to the complexity which is
+generally regarded as unnecessary nowadays.  Bravo's successor
+(Microsoft Word) ditched this in the mid 80's under DOS in favor of a
+very simplified version they called piece tables.  Ropes were
+implemented in an environment with lots of garbage collected memory
+but extremely slow microcoded CPUs.  This sort of machine environment
+hasn't really existed outside of the Xerox workstations
+(Cedar/Mesa/Smalltalk/Interlisp) and the MIT Lisp machines.
+
+
+------------------
+Piece table (Word)
+------------------
+
+Not too complex, extremely fast on modern architectures since one
+chunk of text (the source) is read-only and the other (the
+modifications) is append-only.  Usual implementation is an array of
+pieces, though a doubly linked list of pieces can also be used.  The
+microsoft version tends to give you a stream-oriented editor.  It can
+easily be enhanced with inline style markers, which is why it tends to
+be used for word processors.
+
+If pieces are broken at line boundaries you can get a version that
+combines the benefits of both the array of lines and the piece table.
+Basically each line becomes either a single piece (simplest, works for
+text editors), or a list of pieces (slightly more complex, works well
+for paragraph-oriented word processors).  The two text arrays (source
+and update) work as usual; the only change is how the span of each
+piece is determined.
+
+The simple piece table loads very quickly (just have to map in the
+source piece and record it in the piece table), but saving is slower
+due to need to run around serializing the pieces.  Snapshotting this
+system is extremely quick, since the source is not modified during
+editing it can remain as-is, the update array is append-only and can
+be written as changes are made, so the only work needed at snapshot
+time is to flush the update table and write out the piece table.
+
+The piece table is a (tremendous) simplification of the rope data
+structure.
+
+
+-------------------------
+Ordered File (none known)
+-------------------------
+
+See Prof Eric Demaine's lecture on this structure (it is used in Cache
+Oblivious B-Trees).
+
+Buffer is an array of chars, interspersed with nulls.  Moving around
+doesn't change the buffer.  Inserting a character means you spread out
+the characters until you get a null at the insertion point, then
+overwrite it with the desired character.  This causes the nulls to get
+packed out near the insertion point, after the ratio of nulls to total
+array size drops too low you expand the array and randomly intersperse
+more nulls.  Deleting is just overwriting chars with null.  Amortized
+cost of movement is controlled by ratio of buffer size to content
+size, and winds up being something like O(log^2 N/B) to insert a char
+at a random location if your resize logic is right.
+
+The code is more complicated than gap buffer, but has extremely good
+cache/vm locality.  Because it's difficult to map from cursor x,y to
+text address, you tend to wind up with a stream editor.  Main
+complication is that the text's buffer address keeps moving around.
+Gap buffer has this problem too but it's easier to deal with.
+
+Loading is very fast (don't need any gaps at first).  Saving requires
+squeezing out the nulls but this is very cache and VM friendly.
+
+
+---------
+Analysis
+---------
+
+PE2 used an undocumented internal data structure to pull off its
+cartesian editing model.  One restriction of this structure is that it
+had a line-length limit of 255 (overridable only from the command
+line).  It would simply truncate lines that were too long, though you
+would get a warning when this happened.  It was rarely a problem in
+practice, though we once got a postcript file that was several
+megabytes without a single newline (neither VI nor Brief were
+particularly fun to use on this file either).  Once a file was
+loaded into this buffer format, it could edit the text very
+efficiently using software virtual memory.  You could edit files as
+large as your disk drive with ease, and we did - like 15MB postscript
+files on a 8mhz IBM PC-AT with 640k ram and a 40MB disk drive.
+
+Internally, both string editors and cartesian editors can use any
+editor data structure like gap buffers or piece tables.  VI uses a
+growable vector of growable vectors of chars.  GNU Emacs uses a single
+gap buffer (basically a growable vector where the empty area can be
+anywhere) for each editing buffer.  Epsilon (an emacs-type editor)
+uses an array of fixed-size gap buffers for each editing buffer.
+
+Back in the 70's and 80's, the question of which data structure to use
+for an editor was a matter for great care due to the slow processor
+speeds and limited memory capacity.  Epsilon's buffer structure allows
+it to implement very efficient software virtual memory under DOS.
+Emacs was written on machines with hardware virtual memory, but it's
+simplistic gap buffer scheme has very good virtual memory performance
+once paging starts.
+
+Nowadays the problem is much simpler - hardware virtual memory is
+ubiquitous and works well, and even those monster 15MB files require a
+laughably small amount of memory by todays standards.  Virtual memory
+paging is more of an warning that one of your programs has a memory
+leak than it is a normal occurrence.  Even locality isn't much of a
+concern - most text files will fit in L1 cache on a modern x86
+processor, and even large files will fit in L2 cache.
+
+All of these structures can support either UTF-8 or wide character
+text.  NCurses supports wchar_t, and Windows uses 16-bit wchar_t for
+all its text API's, so wchar_t seems to be the best option.  No point
+doing it right now though; it should be a simple change later.  cstr_t
+goes from char to wchar_t, file load and save will have to convert
+formats.
+
+The structures that are the simplest adequate available are the gap
+buffer, array of lines, and piece table.  The array of pieces and
+array of piece tables aren't much more difficult but are more suited
+to word processors.
+
+The array of lines is an obvious choice, and efficiently supports the
+sort of rectangular operations that PE2 excelled at.  These operations
+are kind of a worst-case for gap buffers.  Piece tables aren't
+fantastic with rectangular operations (they create lots of pieces),
+but they aren't terrible at them either since they don't have to slosh
+lots of memory around.  An array of lines implemented using piece
+tables may be nearly optimal while remaining simple to implement and
+debug.  The Ordered File is probably optimal for these operations,
+except only the addressing problem is so difficult...
+
+The array of lines approach can be combined with the gap buffer
+structure to get the best features of each.  Each line can be a mini-
+gap buffer, and the array of lines itself can be implemented as a gap
+buffer.  Of these two alterations, implementing the array of lines as
+a gap buffer probably makes the most sense, since a line record is
+probably 16 bytes or so and there will more likely be thousands of
+line in the file than tens of thousands of characters on a line.
+
+So after all that, the best approach seems to be just go with growable
+vector of strings.  After benchmarking, consider changing the simple
+growable vector to a gap vector.
+
+
+
+============================================================================
+
+Lines
+
+Max line length = 64k?  Cuts the per-line overhead significantly, and
+since the lines aren't currently implemented as gap buffers it seems
+a reasonable limitation.
+
+In addition to the flags, also add a 1 byte level value that can be
+used to implement hierarchical folding.  Actual control of which lines
+are hidden and shown will be done by the visible flag.
+
+
+============================================================================
+UI considerations
+
+Just go with ncurses on Unix.  For Windows see if there's a decent
+ncurses library (there probably is) or write my own UI straight to the
+console library.  This means it's very important to keep the keyboard
+and display logic separate from the view and buffer logic.
+
+Later if I want to do a GUI version it shouldn't be too hard.
+
+
+============================================================================
+
+Mapping Keys to command sequences
+
+Implement this as a vec of (key:cstr, commands:ipvec).  The intptr_t
+is set up with NULL between commands so the command interpreter and
+the command action can figure out where the parameter bounds are.
+
+Remember to decode _err into a message during screen display, and
+remember to reset _err before executing a key.
+
+
+============================================================================
+
+Commands
+
+Parse [cmd subcmd... parm parm] into an array of intptr_t's, with char* and ints.
+
+Ints are tagged with a 1 in the low bit.
+
+Last parameter is pointer NULL.
+
+Command dispatch is done by comparing the first cmd, that handler can
+then match the subcmds to figure out which detailed cmd to execute.
+
+Alternatively, can have a dispatch table of (handler, char**), and
+match strings until one of the parm array types is an integer or NULL,
+or the pattern in the dispatch table is matched.  This has the
+advantage that all the decode logic for multi-word commands is in one
+place, the disadvantage is that the table will be much larger and
+can't easily be binary searched, so it will be slower.  This may not
+matter in the end though.
+
+
