@@ -188,8 +188,6 @@ void _init_curses()
   if (has_colors()) {
     //logmsg("using colors");
     start_color();
-  }
-  if (can_change_color()) {
     //logmsg("defining color pairs");
     init_pair(C_NORM_TXT, COLOR_WHITE, COLOR_BLUE);
     init_pair(C_MARK_TXT, COLOR_WHITE, COLOR_RED);
