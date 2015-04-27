@@ -10,6 +10,7 @@ test : ./bin/poetest
 
 ./bin/poe: forcelook
 	$(ECHO) building poe
+	mkdir ./bin
 	cd src; $(MAKE) all
 
 ./bin/poetest: ./bin/poe forcelook

@@ -7,6 +7,8 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <errno.h>
 
 #include "poe_exit.h"
 #include "utils.h"
