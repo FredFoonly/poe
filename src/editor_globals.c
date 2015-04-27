@@ -25,16 +25,7 @@ POE_ERR cmd_error = POE_ERR_OK;
 BUFFER dir_buffer;
 BUFFER keys_buffer;
 BUFFER unnamed_buffer;
-tabstops default_tabstops;
-margins default_margins;
-int tabexpand_size = 8;
-bool tabexpand = true;
-bool blankcompress = false;
-bool autowrap = true;
 int vsplitter = 500;
 int hsplitter = 500;
-enum search_mode_t searchmode = search_mode_smart;
-PROFILEPTR dflt_data_profile = NULL;
-PROFILEPTR dflt_cmd_profile = NULL;
-
+PROFILEPTR default_profile = NULL;
 

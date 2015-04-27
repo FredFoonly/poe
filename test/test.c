@@ -49,8 +49,10 @@ int main(int argc, char** argv)
   init_marks();
   init_markstack();
   init_buffer();
-  tabs_init(&default_tabstops, 0, 8, NULL);
-  margins_init(&default_margins, 0, 79, 4);
+  default_profile = alloc_profile("testing");
+  
+  /* tabs_init(&default_tabstops, 0, 8, NULL); */
+  /* margins_init(&default_margins, 0, 79, 4); */
 
   clock_t starttime = clock();
   int i;
@@ -223,6 +225,7 @@ int main(int argc, char** argv)
   clock_t elapsed = endtime - starttime;
   printf("elapsed = %ld.%02ld secs\n", (long int)(elapsed/CLOCKS_PER_SEC), (long int)((elapsed%CLOCKS_PER_SEC)*100)/CLOCKS_PER_SEC);
 
+  free_profile(default_profile);
   shutdown_buffer();
   shutdown_markstack();
   shutdown_marks();

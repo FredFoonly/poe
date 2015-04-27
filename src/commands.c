@@ -104,6 +104,9 @@ command_handler_t lookup_command(const pivec* cmdseq, int pc, int* args_idx)
 POE_ERR _savelines_other(BUFFER src, int line, int nlines)
 {
   TRACE_ENTER;
+  // Don't save command lines
+  if (buffer_tstflags(src, BUF_FLG_CMDLINE))
+	TRACE_RETURN(POE_ERR_OK);
   char hdr_line[PATH_MAX+64];
   const char* buffername = buffer_name(src);
   snprintf(hdr_line, sizeof(hdr_line), "********** %s %d %d **********", 
@@ -158,20 +161,20 @@ void xtract_cmd_context(cmd_ctx* ctx, WINPTR* w, VIEWPTR* v, BUFFER* b, int* r, 
 #define CMD_ENTER(ctx) TRACE_ENTER
 
 #define CMD_ENTER_BND(ctx,w,v,b,r,c)           \
-  TRACE_ENTER;                             \
+  TRACE_ENTER;                                 \
   WINPTR w; VIEWPTR v; BUFFER b; int r, c;     \
   xtract_targ_context(ctx, &w,&v,&b,&r,&c);
   
-#define CMD_ENTER_DATAONLY(ctx)            \
-  TRACE_ENTER;                             \
+#define CMD_ENTER_DATAONLY(ctx)                \
+  TRACE_ENTER;                                 \
   if (ctx->targ_buf == ctx->cmd_buf)           \
     CMD_RETURN(POE_ERR_UNK_CMD)
 
-#define CMD_ENTER_DATAONLY_BND(ctx,w,v,b,r,c)     \
-  TRACE_ENTER;                                \
-  if (ctx->targ_buf == ctx->cmd_buf)              \
-    CMD_RETURN(POE_ERR_UNK_CMD);                  \
-  WINPTR w; VIEWPTR v; BUFFER b; int r, c;        \
+#define CMD_ENTER_DATAONLY_BND(ctx,w,v,b,r,c)  \
+  TRACE_ENTER;                                 \
+  if (ctx->targ_buf == ctx->cmd_buf)           \
+    CMD_RETURN(POE_ERR_UNK_CMD);               \
+  WINPTR w; VIEWPTR v; BUFFER b; int r, c;     \
   xtract_targ_context(ctx, &w,&v,&b,&r,&c);
 
 
@@ -236,7 +239,7 @@ POE_ERR cmd_erase_command_line(cmd_ctx* ctx);
 
 void _printf_cmdline(cmd_ctx* ctx, const char* fmt, ...)
 {
-  char tmp[128];
+  char tmp[256];
   va_list ap;
   va_start(ap, fmt);
   cmd_erase_command_line(ctx);
@@ -251,6 +254,7 @@ void _printf_cmdline(cmd_ctx* ctx, const char* fmt, ...)
 POE_ERR cmd_erase_command_line(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
+  markstack_cur_seal();
   buffer_removechars(ctx->cmd_buf, 0, 0, buffer_line_length(ctx->cmd_buf, 0), true);
   CMD_RETURN(POE_ERR_OK);
 }
@@ -322,20 +326,13 @@ POE_ERR cmd_right_wrap(cmd_ctx* ctx)
 
 POE_ERR _cmd_up(cmd_ctx* ctx, int nrows)
 {
-  CMD_ENTER(ctx);
+  TRACE_ENTER;
   POE_ERR err = POE_ERR_OK;
-  if (buffer_tstflags(ctx->targ_buf, BUF_FLG_CMDLINE)) {
-    // move up from commandline = move to last visible row in data buf
-    int cmd_col = ctx->cmd_col;
+  if (buffer_tstflags(ctx->targ_buf, BUF_FLG_CMDLINE))
     win_set_commandmode(ctx->wnd, false);
-    int top, left, bot, right;
-    view_get_port(ctx->targ_view, &top, &left, &bot, &right);
-    err = view_move_cursor_to(ctx->targ_view, bot, cmd_col);
-  }
-  else {
+  else
     err = view_move_cursor_by(ctx->targ_view, -nrows, 0);
-  }
-  CMD_RETURN(err);
+  TRACE_RETURN(err);
 }
 
 
@@ -351,14 +348,18 @@ POE_ERR cmd_up(cmd_ctx* ctx)
 POE_ERR _cmd_down(cmd_ctx* ctx, int nrows)
 {
   TRACE_ENTER;
-  POE_ERR err = view_move_cursor_by(ctx->targ_view, nrows, 0);
+  POE_ERR err = POE_ERR_OK;
+  if (buffer_tstflags(ctx->targ_buf, BUF_FLG_CMDLINE))
+    win_set_commandmode(ctx->wnd, false);
+  else
+    view_move_cursor_by(ctx->targ_view, nrows, 0);
   TRACE_RETURN(err);
 }
 
 
 POE_ERR cmd_down(cmd_ctx* ctx)
 {
-  CMD_ENTER_DATAONLY(ctx);
+  CMD_ENTER(ctx);
   int nrows = next_parm_int(ctx, 1);
   POE_ERR err = _cmd_down(ctx, nrows);
   CMD_RETURN(err);
@@ -403,20 +404,32 @@ POE_ERR cmd_move_view_down(cmd_ctx* ctx)
 
 POE_ERR cmd_page_up(cmd_ctx* ctx)
 {
-  CMD_ENTER_DATAONLY(ctx);
-  int ht, wd;
-  view_get_portsize(ctx->targ_view, &ht, &wd);
-  POE_ERR err = _cmd_up(ctx, ht);
+  CMD_ENTER(ctx);
+  POE_ERR err = POE_ERR_OK;
+  if (buffer_tstflags(ctx->targ_buf, BUF_FLG_CMDLINE)) {
+    win_set_commandmode(ctx->wnd, false);
+  }
+  else {
+    int ht, wd;
+    view_get_portsize(ctx->targ_view, &ht, &wd);
+    err = _cmd_up(ctx, ht);
+  }
   CMD_RETURN(err);
 }
 
 
 POE_ERR cmd_page_down(cmd_ctx* ctx)
 {
-  CMD_ENTER_DATAONLY(ctx);
-  int ht, wd;
-  view_get_portsize(ctx->targ_view, &ht, &wd);
-  POE_ERR err = _cmd_down(ctx, ht);
+  CMD_ENTER(ctx);
+  POE_ERR err = POE_ERR_OK;
+  if (buffer_tstflags(ctx->targ_buf, BUF_FLG_CMDLINE)) {
+    win_set_commandmode(ctx->wnd, false);
+  }
+  else {
+    int ht, wd;
+    view_get_portsize(ctx->targ_view, &ht, &wd);
+    err = _cmd_down(ctx, ht);
+  }
   CMD_RETURN(err);
 }
 
@@ -522,7 +535,7 @@ POE_ERR cmd_bottom(cmd_ctx* ctx)
 }
 
 
-POE_ERR _cmd_chr(cmd_ctx* ctx, char chr)
+POE_ERR _cmd_char(cmd_ctx* ctx, char chr)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
   POE_ERR err = POE_ERR_OK;
@@ -538,30 +551,32 @@ POE_ERR _cmd_chr(cmd_ctx* ctx, char chr)
     // automagically move the cursor.
     err = _cmd_right(ctx, 1);
   }
-  
-  if (chr == ' ' && autowrap) {
+ 
+  PROFILEPTR profile = buffer_get_profile(buf); 
+  if (chr == ' ' && profile->autowrap) {
     buffer_wrap_line(buf, row, -1, -1, -1, -1, true);
 	if (insert_mode) {
 	  update_context(ctx);
 	  xtract_targ_context(ctx, &wnd, &view, &buf, &row, &col);
 	  if (col > 0 && buffer_getchar(buf, row, col-1) != ' ')
-	  	buffer_insert(buf, row, col, ' ', true);
+		buffer_insert(buf, row, col, ' ', true);
 	}
   }
   CMD_RETURN(err);
 }
 
 
-POE_ERR cmd_chr(cmd_ctx* ctx)
+POE_ERR cmd_char(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
   POE_ERR err = POE_ERR_OK;
+  markstack_cur_seal();
   if (ctx->cmdseq == NULL || !next_parm_is_int(ctx)) {
     err = POE_ERR_INVALID_KEY;
   }
   else {
     int chr = next_parm_int(ctx, ' ');
-    err = _cmd_chr(ctx, chr);
+    err = _cmd_char(ctx, chr);
   }
   CMD_RETURN(err);
 }
@@ -571,6 +586,7 @@ POE_ERR cmd_str(cmd_ctx* ctx)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
   POE_ERR err = POE_ERR_OK;
+  markstack_cur_seal();
   if (!next_parm_is_str(ctx)) {
     err = POE_ERR_INVALID_KEY;
   }
@@ -579,11 +595,12 @@ POE_ERR cmd_str(cmd_ctx* ctx)
     char* safe = strsave(str);
     int i;
     int hasspace = false;
-    for (i = 0; safe[i] != '\0'; i++)
+    for (i = 0; safe[i] != '\0'; i++) {
       if (iscntrl(safe[i]) || isspace(safe[i])) {
         safe[i] = ' ';
         hasspace = true;
       }
+	}
     int insert_mode = view_get_insertmode(view);
     if (insert_mode) {
       int n = strlen(safe);
@@ -594,17 +611,48 @@ POE_ERR cmd_str(cmd_ctx* ctx)
       err = _cmd_right(ctx, strlen(str));
     }
     free(safe);
-    if (hasspace && autowrap)
+	PROFILEPTR profile = buffer_get_profile(buf); 
+    if (hasspace && profile->autowrap)
       buffer_wrap_line(buf, row, row, -1, -1, -1, true);
   }
   CMD_RETURN(err);
 }
 
 
+
+POE_ERR cmd_insert_text(cmd_ctx* ctx)
+{
+  CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  POE_ERR err = POE_ERR_OK;
+  markstack_cur_seal();
+  if (!next_parm_is_str(ctx)) {
+    err = POE_ERR_INVALID_KEY;
+  }
+  else {
+    const char* str = next_parm_str(ctx, "");
+    char* safe = strsave(str);
+    int i;
+    int hasspace = false;
+    for (i = 0; safe[i] != '\0'; i++) {
+      if (iscntrl(safe[i]) || isspace(safe[i])) {
+        safe[i] = ' ';
+        hasspace = true;
+      }
+	}
+	int n = strlen(safe);
+	buffer_insertstrn(buf, row, col, str, n, true);
+    free(safe);
+  }
+  CMD_RETURN(err);
+}
+
+
+
 POE_ERR cmd_rubout(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
   POE_ERR err = POE_ERR_OK;
+  markstack_cur_seal();
   int targ_col = max(0, ctx->targ_col-1);
   if (targ_col >= buffer_line_length(ctx->targ_buf, ctx->targ_row)) {
     view_move_cursor_to(ctx->targ_view, ctx->targ_row, targ_col); 
@@ -619,8 +667,28 @@ POE_ERR cmd_rubout(cmd_ctx* ctx)
 POE_ERR cmd_delete_char(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
+  markstack_cur_seal();
   buffer_removechar(ctx->targ_buf, ctx->targ_row, ctx->targ_col, true);
   CMD_RETURN(POE_ERR_OK);
+}
+
+
+POE_ERR cmd_delete_char_join(cmd_ctx* ctx)
+{
+  CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
+  POE_ERR err = POE_ERR_OK;
+  int nlines = buffer_count(buf);
+  int nchars = buffer_line_length(buf, row);
+  if (row == nlines-1 && col >= nchars)
+    CMD_RETURN(err);
+  if (col >= nchars) {
+        _savelines_other(buf, row, 2);
+        err = buffer_joinline(buf, row, true);
+  }
+  if (err == POE_ERR_OK)
+        buffer_removechar(buf, row, col, true);
+  CMD_RETURN(err);
 }
 
 
@@ -667,6 +735,7 @@ POE_ERR cmd_left_edge(cmd_ctx* ctx)
 POE_ERR cmd_center_line(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx)
+  markstack_cur_seal();
   int ht, wd;
   view_get_portsize(ctx->targ_view, &ht, &wd);
   int top, left, bot, right;
@@ -680,13 +749,13 @@ POE_ERR cmd_center_line(cmd_ctx* ctx)
 POE_ERR cmd_indent(cmd_ctx* ctx)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
-  if (!ctx->src_is_commandline) {
-	int leftmargin, rightmargin, paragraphmargin;
-	buffer_getmargins(buf, &leftmargin, &rightmargin, &paragraphmargin);
-	if (row == 0 || buffer_isblankline(buf, row-1))
-	  view_move_cursor_to(view, row, paragraphmargin);
-	else
-	  view_move_cursor_to(view, row, leftmargin);
+  if (!buffer_tstflags(ctx->targ_buf, BUF_FLG_CMDLINE)) {
+    int leftmargin, rightmargin, paragraphmargin;
+    buffer_getmargins(buf, &leftmargin, &rightmargin, &paragraphmargin);
+    if (row == 0 || buffer_isblankline(buf, row-1))
+      view_move_cursor_to(view, row, paragraphmargin);
+    else
+      view_move_cursor_to(view, row, leftmargin);
   }
   CMD_RETURN(POE_ERR_OK);
 }
@@ -695,8 +764,10 @@ POE_ERR cmd_indent(cmd_ctx* ctx)
 POE_ERR cmd_erase_begin_line(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
+  markstack_cur_seal();
   _savelines_other(ctx->targ_buf, ctx->targ_row, 1);
   buffer_removechars(ctx->targ_buf, ctx->targ_row, 0, ctx->targ_col, true);
+  view_move_cursor_to(ctx->targ_view, ctx->targ_row, ctx->targ_col);
   CMD_RETURN(POE_ERR_OK);
 }
 
@@ -704,6 +775,7 @@ POE_ERR cmd_erase_begin_line(cmd_ctx* ctx)
 POE_ERR cmd_erase_end_line(cmd_ctx* ctx)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   _savelines_other(buf, row, 1);
   int len = buffer_line_length(buf, row);
   int nCharsToRemove = max(0, len-col);
@@ -715,6 +787,7 @@ POE_ERR cmd_erase_end_line(cmd_ctx* ctx)
 POE_ERR cmd_delete_line(cmd_ctx* ctx)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   _savelines_other(buf, row, 1);
   if (buffer_count(buf) == 1) {
     int len = buffer_line_length(buf, 0);
@@ -730,6 +803,7 @@ POE_ERR cmd_delete_line(cmd_ctx* ctx)
 POE_ERR cmd_insert_line(cmd_ctx* ctx)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   int nlines = next_parm_int(ctx, 1);
   buffer_insertblanklines(buf, row+1, nlines, true);
   view_move_cursor_to(view, row+nlines, 0);
@@ -769,7 +843,7 @@ POE_ERR cmd_begin_word(cmd_ctx* ctx)
   else {
     buffer_scantill_wrap(buf, &row, &col, -1, poe_iswhitespace);
     if (poe_iswhitespace(buffer_getchar(buf, row, col)))
-     buffer_right_wrap(buf, &row, &col);
+	  buffer_right_wrap(buf, &row, &col);
   }
   view_move_cursor_to(view, row, col);
   CMD_RETURN(POE_ERR_OK);
@@ -823,11 +897,73 @@ POE_ERR cmd_find_prev_blank_line(cmd_ctx* ctx)
 }
 
 
+POE_ERR cmd_tab_paragraph(cmd_ctx* ctx)
+{
+  CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  int newrow = buffer_findparagraphsep(buf, row, 1);
+  newrow = buffer_findnonparagraphsep(buf, newrow, 1);
+  view_move_cursor_to(view, newrow, 0);
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+POE_ERR cmd_backtab_paragraph(cmd_ctx* ctx)
+{
+  CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  int newrow = row;
+  newrow = buffer_findparagraphsep(buf, newrow, -1);
+  newrow = buffer_findnonparagraphsep(buf, newrow, -1);
+  newrow = buffer_findparagraphsep(buf, newrow, -1);
+  if (newrow > 0)
+	newrow = min(buffer_count(buf)-1, newrow+1);
+  view_move_cursor_to(view, newrow, 0);
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+POE_ERR cmd_begin_paragraph(cmd_ctx* ctx)
+{
+  CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  int newrow = row;
+  if (buffer_isparagraphsep(buf, row)) {
+	newrow = buffer_findnonparagraphsep(buf, newrow, 1);
+  }
+  else {
+	newrow = buffer_findparagraphsep(buf, newrow, -1);
+	if (newrow > 0)
+	  newrow = min(buffer_count(buf)-1, newrow+1);
+  }
+  view_move_cursor_to(view, newrow, 0);
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+POE_ERR cmd_end_paragraph(cmd_ctx* ctx)
+{
+  CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  int newrow = row;
+  if (buffer_isparagraphsep(buf, row)) {
+	newrow = buffer_findnonparagraphsep(buf, newrow, -1);
+  }
+  else {
+	newrow = buffer_findparagraphsep(buf, newrow, 1);
+	newrow = max(0, newrow-1);
+  }
+  col = buffer_line_length(buf, newrow);
+  view_move_cursor_to(view, newrow, col);
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+
+
 POE_ERR cmd_split(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx);
+  markstack_cur_seal();
   _savelines_other(ctx->targ_buf, ctx->targ_row, 1);
   POE_ERR err = buffer_splitline(ctx->targ_buf, ctx->targ_row, ctx->targ_col, true);
+  view_move_cursor_to(ctx->targ_view, ctx->targ_row, ctx->targ_col);
   CMD_RETURN(err);
 }
 
@@ -835,6 +971,7 @@ POE_ERR cmd_split(cmd_ctx* ctx)
 POE_ERR cmd_join(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx);
+  markstack_cur_seal();
   int nrows = buffer_count(ctx->targ_buf);
   if (ctx->targ_row >= nrows-1)
     CMD_RETURN(POE_ERR_OK);
@@ -848,6 +985,7 @@ POE_ERR cmd_rubout_join(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
   POE_ERR err = POE_ERR_OK;
+  markstack_cur_seal();
   if (row == 0 && col == 0)
     CMD_RETURN(err);
   if (col == 0) {
@@ -1051,6 +1189,7 @@ typedef void (*upperop_t)(BUFFER, int, int, int);
 POE_ERR _cmd_upperlower(cmd_ctx* ctx, upperop_t op)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   enum marktype typ;
   int l1, c1, l2, c2;
   POE_ERR err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
@@ -1118,27 +1257,27 @@ POE_ERR _cmd_shift(cmd_ctx* ctx, int cols_to_shift)
   case Marktype_Line: case Marktype_Block:
     _savelines_other(buf, l1, l2-l1+1);
     if (typ == Marktype_Line)
-     c1 = 0;
+      c1 = 0;
     for (i = l1; i <= l2; i++) {
-     if (cols_to_shift < 0) {
-       buffer_removechars(buf, i, c1, -cols_to_shift, true);
-     }
-     else if (cols_to_shift > 0) {
-       buffer_insertct(buf, i, c1, ' ', cols_to_shift, true);
-     }
+      if (cols_to_shift < 0) {
+        buffer_removechars(buf, i, c1, -cols_to_shift, true);
+      }
+      else if (cols_to_shift > 0) {
+        buffer_insertct(buf, i, c1, ' ', cols_to_shift, true);
+      }
     }
     err = POE_ERR_OK;
     break;
   case Marktype_Char:
     _savelines_other(buf, l1, l2-l1+1);
     for (i = l1; i <= l2; i++) {
-     int col = i == l1 ? c1 : 0;
-     if (cols_to_shift < 0) {
-       buffer_removechars(buf, i, col, -cols_to_shift, true);
-     }
-     else if (cols_to_shift > 0){
-       buffer_insertct(buf, i, col, ' ', cols_to_shift, true);
-     }
+      int col = i == l1 ? c1 : 0;
+      if (cols_to_shift < 0) {
+        buffer_removechars(buf, i, col, -cols_to_shift, true);
+      }
+      else if (cols_to_shift > 0){
+        buffer_insertct(buf, i, col, ' ', cols_to_shift, true);
+      }
     }
     err = POE_ERR_OK;
     break;
@@ -1153,6 +1292,7 @@ POE_ERR _cmd_shift(cmd_ctx* ctx, int cols_to_shift)
 POE_ERR cmd_shift_left(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx);
+  markstack_cur_seal();
   int cols_to_shift = next_parm_int(ctx, 1);
   POE_ERR err = _cmd_shift(ctx, -cols_to_shift);
   CMD_RETURN(err);
@@ -1162,6 +1302,7 @@ POE_ERR cmd_shift_left(cmd_ctx* ctx)
 POE_ERR cmd_shift_right(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx);
+  markstack_cur_seal();
   int cols_to_shift = next_parm_int(ctx, 1);
   POE_ERR err = _cmd_shift(ctx, cols_to_shift);
   CMD_RETURN(err);
@@ -1182,6 +1323,7 @@ POE_ERR cmd_clear_marks(cmd_ctx* ctx)
 POE_ERR cmd_escape(cmd_ctx* ctx)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   const char* scode = next_parm_str(ctx, (const char*)NULL);
   POE_ERR err = POE_ERR_OK;
   if (scode == NULL) {
@@ -1192,10 +1334,10 @@ POE_ERR cmd_escape(cmd_ctx* ctx)
   else {
     long lcode = strtol(scode, NULL, 10);
     if (lcode > 255) {
-     err = POE_ERR_INVALID_KEY;
+      err = POE_ERR_INVALID_KEY;
     }
     else {
-     err = _cmd_chr(ctx, (intptr_t)lcode);
+      err = _cmd_char(ctx, (intptr_t)lcode);
     }
   }
   CMD_RETURN(err);
@@ -1206,6 +1348,7 @@ POE_ERR cmd_escape(cmd_ctx* ctx)
 POE_ERR cmd_delete_mark(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   cmd_begin_mark(ctx);
   enum marktype typ;
   int l1, c1, l2, c2;
@@ -1215,41 +1358,41 @@ POE_ERR cmd_delete_mark(cmd_ctx* ctx)
   switch (typ) {
   case Marktype_Line:
     {
-     _savelines_other(buf, l1, l2-l1+1);
-     err = markstack_cur_unmark();
-     buffer_removelines(buf, l1, l2-l1+1, true);
-     buffer_ensure_min_lines(buf, true);
+      _savelines_other(buf, l1, l2-l1+1);
+      err = markstack_cur_unmark();
+      buffer_removelines(buf, l1, l2-l1+1, true);
+      buffer_ensure_min_lines(buf, true);
     }
     break;
   case Marktype_Block:
     {
-     _savelines_other(buf, l1, l2-l1+1);
-     err = markstack_cur_unmark();
-     int i, cols_to_shift = c2-c1+1;
-     for (i = l1; i <= l2; i++) {
-       buffer_removechars(buf, i, c1, cols_to_shift, true);
-     }
+      _savelines_other(buf, l1, l2-l1+1);
+      err = markstack_cur_unmark();
+      int i, cols_to_shift = c2-c1+1;
+      for (i = l1; i <= l2; i++) {
+        buffer_removechars(buf, i, c1, cols_to_shift, true);
+      }
     }
     break;
   case Marktype_Char:
     {
-     _savelines_other(buf, l1, l2-l1+1);
-     err = markstack_cur_unmark();
-     if (l1 == l2) {
-       buffer_removechars(buf, l1, c1, c2-c1+1, true);
-     }
-     else {
-       int l1len = buffer_line_length(buf, l1);
-       int l2len = buffer_line_length(buf, l2);
-       int leading = max(0, l1len-c1);
-       int trailing = min(c2+1, l2len);
-       buffer_removechars(buf, l1, c1, leading, true);
-       buffer_removechars(buf, l2, 0, trailing, true);
-       if (l2-l1-1>0) {
-        buffer_removelines(buf, l1+1, l2-l1-1, true);
-       }
-       err = buffer_joinline(buf, l1, true);
-     }
+      _savelines_other(buf, l1, l2-l1+1);
+      err = markstack_cur_unmark();
+      if (l1 == l2) {
+        buffer_removechars(buf, l1, c1, c2-c1+1, true);
+      }
+      else {
+        int l1len = buffer_line_length(buf, l1);
+        int l2len = buffer_line_length(buf, l2);
+        int leading = max(0, l1len-c1);
+        int trailing = min(c2+1, l2len);
+        buffer_removechars(buf, l1, c1, leading, true);
+        buffer_removechars(buf, l2, 0, trailing, true);
+        if (l2-l1-1>0) {
+          buffer_removelines(buf, l1+1, l2-l1-1, true);
+        }
+        err = buffer_joinline(buf, l1, true);
+      }
     }
     break;
   case Marktype_None: default:
@@ -1263,6 +1406,7 @@ POE_ERR cmd_delete_mark(cmd_ctx* ctx)
 POE_ERR cmd_copy_mark(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   enum marktype typ;
   int l1, c1, l2, c2;
   POE_ERR err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
@@ -1283,51 +1427,51 @@ POE_ERR cmd_copy_mark(cmd_ctx* ctx)
     _savelines_other(buf, row, 2);
     nc = c2-c1+1;
     for (i = 0; i < nl; i++) {
-     buffer_copyinsertchars(buf, row+i, col, markbuf, l1+i, c1, c2-c1+1, true);
+      buffer_copyinsertchars(buf, row+i, col, markbuf, l1+i, c1, c2-c1+1, true);
     }
     break;
   case Marktype_Char:
     nl = l2-l1+1;
     _savelines_other(buf, row, 1);
     if (l1 == l2) {
-	  //int srclinelen = buffer_line_length(markbuf, l1);
+     //int srclinelen = buffer_line_length(markbuf, l1);
      buffer_copyinsertchars(buf, row, col, markbuf, l1, c1, c2-c1+1, true);
     }
     else if (markbuf != buf || row > l2) {
-	  // can safely do it the easy way
-	  buffer_splitline(buf, row, col, true);
-	  int srclinelen = buffer_line_length(markbuf, l1);
-	  // copy first line
-	  buffer_copyinsertchars(buf, row, col, markbuf, l1, c1, srclinelen-c1, true);
-	  // copy last line
-	  srclinelen = buffer_line_length(markbuf, l2);
-	  int trl_chrs = min(srclinelen, c2+1);
-	  buffer_copyinsertchars(buf, row+1, 0, markbuf, l2, 0, trl_chrs, true);
-	  // copy middle lines
-	  nl = l2-l1-1;
-	  if (nl > 0) {
-		err = buffer_copyinsertlines(buf, row+1, markbuf, l1+1, nl, true);
-	  }
-	}
-	else {
-	  // have to be careful - the process of copying the text will
-	  // move the source mark around.
-	  buffer_splitline(buf, row, col, true);
-	  // update our knowledge of the source mark after the split
-	  markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
-	  int fml = row+1, lml = row+1+l2-l1, nml=l2-l1+1;
-	  // copy the marked lines in between the two halves of the original line
-	  buffer_copyinsertlines(buf, fml, markbuf, l1, nml, true);
-	  // delete unneeded half of the first marked line
-	  buffer_removechars(buf, fml, 0, c1, true);
-	  // delete the unneeded half of the last marked line
-	  int len_lml = buffer_line_length(buf, lml);
-	  buffer_removechars(buf, lml, c2+1, len_lml-c2-1, true);
-	  // join the last half of the original line with the first part
-	  // of the last marked line with the
-	  buffer_joinline(buf, lml, true);
-	  // join the first half line with the surviving half  of the first marked line
-	  buffer_joinline(buf, row, true);
+      // can safely do it the easy way
+      buffer_splitline(buf, row, col, true);
+      int srclinelen = buffer_line_length(markbuf, l1);
+      // copy first line
+      buffer_copyinsertchars(buf, row, col, markbuf, l1, c1, srclinelen-c1, true);
+      // copy last line
+      srclinelen = buffer_line_length(markbuf, l2);
+      int trl_chrs = min(srclinelen, c2+1);
+      buffer_copyinsertchars(buf, row+1, 0, markbuf, l2, 0, trl_chrs, true);
+      // copy middle lines
+      nl = l2-l1-1;
+      if (nl > 0) {
+        err = buffer_copyinsertlines(buf, row+1, markbuf, l1+1, nl, true);
+      }
+    }
+    else {
+      // have to be careful - the process of copying the text will
+      // move the source mark around.
+      buffer_splitline(buf, row, col, true);
+      // update our knowledge of the source mark after the split
+      markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
+      int fml = row+1, lml = row+1+l2-l1, nml=l2-l1+1;
+      // copy the marked lines in between the two halves of the original line
+      buffer_copyinsertlines(buf, fml, markbuf, l1, nml, true);
+      // delete unneeded half of the first marked line
+      buffer_removechars(buf, fml, 0, c1, true);
+      // delete the unneeded half of the last marked line
+      int len_lml = buffer_line_length(buf, lml);
+      buffer_removechars(buf, lml, c2+1, len_lml-c2-1, true);
+      // join the last half of the original line with the first part
+      // of the last marked line with the
+      buffer_joinline(buf, lml, true);
+      // join the first half line with the surviving half  of the first marked line
+      buffer_joinline(buf, row, true);
     }
     break;
   case Marktype_None: default:
@@ -1341,6 +1485,7 @@ POE_ERR cmd_copy_mark(cmd_ctx* ctx)
 POE_ERR cmd_move_mark(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx);
+  markstack_cur_seal();
   POE_ERR err = cmd_copy_mark(ctx);
   if (err == POE_ERR_OK) {
     err = cmd_delete_mark(ctx);
@@ -1356,6 +1501,7 @@ POE_ERR cmd_move_mark(cmd_ctx* ctx)
 POE_ERR cmd_fill_mark(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   enum marktype typ;
   int l1, c1, l2, c2;
   POE_ERR err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
@@ -1370,47 +1516,47 @@ POE_ERR cmd_fill_mark(cmd_ctx* ctx)
   int parm_chr = next_parm_int(ctx, -1);
   char chr;
   if (parm_chr >= 0)
-	chr = (char)parm_chr;
+    chr = (char)parm_chr;
   else
-	err = get_insertable_key(&chr);
+    err = get_insertable_key(&chr);
   if (err != POE_ERR_OK)
     CMD_RETURN(err); 
   int i, n;
   switch (typ) {
   case Marktype_Line:
     {
-     _savelines_other(markbuf, l1, l2-l1+1);
-     for (i = l1; i <= l2; i++) {
-       n = buffer_line_length(markbuf, i);
-       buffer_setcharct(markbuf, i, 0, chr, n);
-     }
+      _savelines_other(markbuf, l1, l2-l1+1);
+      for (i = l1; i <= l2; i++) {
+        n = buffer_line_length(markbuf, i);
+        buffer_setcharct(markbuf, i, 0, chr, n);
+      }
     }
     err = POE_ERR_OK;
     break;
   case Marktype_Block:
     {
-     n = l2-l1+1;
-     _savelines_other(markbuf, l1, n);
-     for (i = l1; i <= l2; i++)
-       buffer_setcharct(markbuf, i, c1, chr, c2-c1+1);
+      n = l2-l1+1;
+      _savelines_other(markbuf, l1, n);
+      for (i = l1; i <= l2; i++)
+        buffer_setcharct(markbuf, i, c1, chr, c2-c1+1);
     }
     err = POE_ERR_OK;
     break;
   case Marktype_Char:
     {
-     n = l2-l1+1;
-     _savelines_other(markbuf, l1, n);
-     if (l1 == l2) {
-       buffer_setcharct(markbuf, l1, c1, chr, c2-c1+1);
-     }
-     else {
-       buffer_setcharct(markbuf, l1, c1, chr, buffer_line_length(markbuf, l1) - c1);
-       for (i = l1+1; i < l2; i++) {
-        n = buffer_line_length(markbuf, i);
-        buffer_setcharct(markbuf, i, 0, chr, n);
-       }
-       buffer_setcharct(markbuf, l2, 0, chr, c2);
-     }
+      n = l2-l1+1;
+      _savelines_other(markbuf, l1, n);
+      if (l1 == l2) {
+        buffer_setcharct(markbuf, l1, c1, chr, c2-c1+1);
+      }
+      else {
+        buffer_setcharct(markbuf, l1, c1, chr, buffer_line_length(markbuf, l1) - c1);
+        for (i = l1+1; i < l2; i++) {
+          n = buffer_line_length(markbuf, i);
+          buffer_setcharct(markbuf, i, 0, chr, n);
+        }
+        buffer_setcharct(markbuf, l2, 0, chr, c2);
+      }
     }
     err = POE_ERR_OK;
     break;
@@ -1434,6 +1580,7 @@ POE_ERR cmd_confirm_change(cmd_ctx* ctx)
 POE_ERR cmd_overlay_block(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   enum marktype typ;
   int l1, c1, l2, c2;
   POE_ERR err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
@@ -1469,6 +1616,7 @@ POE_ERR cmd_overlay_block(cmd_ctx* ctx)
 POE_ERR cmd_reflow(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   enum marktype typ;
   int l1, c1, l2, c2;
   POE_ERR err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
@@ -1523,10 +1671,12 @@ POE_ERR cmd_reflow(cmd_ctx* ctx)
 POE_ERR cmd_execute(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
+  //logmsg("parsing command line");
 
-  WINPTR wnd; VIEWPTR view; BUFFER cmdbuf;
-  int row, col;
-  xtract_cmd_context(ctx, &wnd, &view, &cmdbuf, &row, &col);
+  markstack_cur_seal();
+  WINPTR wnd; VIEWPTR cmdview; BUFFER cmdbuf;
+  int cmdrow, cmdcol;
+  xtract_cmd_context(ctx, &wnd, &cmdview, &cmdbuf, &cmdrow, &cmdcol);
 
   // Get command text and parse it
   cstr cmd_text;
@@ -1536,7 +1686,9 @@ POE_ERR cmd_execute(cmd_ctx* ctx)
   pivec_init(&tokens, 10);
   cstr_trimleft(&cmd_text, poe_iswhitespace);
   cstr_trimright(&cmd_text, poe_iswhitespace);
-  POE_ERR err = parse_cmdline(&cmd_text, &tokens);
+  int parse_pos = 0;
+  //logmsg("parsing command line");
+  POE_ERR err = parse_cmdline(&cmd_text, &tokens, &parse_pos);
 
   // Dump out the parsed tokens for debugging
   /* int i, n = pivec_count(&tokens); */
@@ -1558,21 +1710,25 @@ POE_ERR cmd_execute(cmd_ctx* ctx)
   pivec_append(&tokens, CMD_SEP);
   pivec_append(&tokens, CMD_NULL);
 
-  // figure out our new context for the stuff we're about to interpret
-  cmd_ctx cmdline_ctx;
-  cmdline_ctx.src_is_commandline = true;
-  cmdline_ctx.save_commandline = false;
-  update_context(&cmdline_ctx);
-  cmdline_ctx.cmdseq = &tokens;
-  cmdline_ctx.pc = 0;
-  err = interpret_command_seq(&cmdline_ctx);
-
-  // For most commands we should clear the command line afterwards.
-  // But not all commands...
-  if (err == POE_ERR_OK && !cmdline_ctx.save_commandline) {
-    cmd_erase_command_line(ctx);
-    /* if (ctx->targ_buf == ctx->cmd_buf) */
-    /*   cmd_cursor_data(ctx); */
+  if (err == POE_ERR_OK) {
+	// figure out our new context for the stuff we're about to interpret
+	cmd_ctx cmdline_ctx;
+	cmdline_ctx.src_is_commandline = true;
+	cmdline_ctx.save_commandline = false;
+	update_context(&cmdline_ctx);
+	cmdline_ctx.cmdseq = &tokens;
+	cmdline_ctx.pc = 0;
+	//logmsg("interpreting command seq");
+	err = interpret_command_seq(&cmdline_ctx);
+	// For most commands we should clear the command line afterwards.
+	// But not all commands, and not if there was an error
+	if (err == POE_ERR_OK && !cmdline_ctx.save_commandline) {
+	  cmd_erase_command_line(ctx);
+	}
+  }
+  else {
+	//logmsg("got error in parse or validate");
+	view_move_cursor_to(cmdview, 0, parse_pos);
   }
 
   cstr_destroy(&cmd_text);
@@ -1585,6 +1741,7 @@ POE_ERR cmd_execute(cmd_ctx* ctx)
 POE_ERR cmd_edit(cmd_ctx* ctx)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   POE_ERR err = POE_ERR_OK;
   const char* filename = next_parm_str(ctx, (const char*)NULL);
   const char* exp_mode = next_parm_str(ctx, (const char*)NULL);
@@ -1592,7 +1749,8 @@ POE_ERR cmd_edit(cmd_ctx* ctx)
     wins_cur_nextbuffer();
   }
   else {
-    bool file_tab_expand = tabexpand;
+	PROFILEPTR profile = buffer_get_profile(buf); 
+    bool file_tab_expand = profile->tabexpand;
     if (exp_mode != NULL) {
      if (strcasecmp(exp_mode, "notabs") == 0)
        file_tab_expand = true;
@@ -1606,41 +1764,42 @@ POE_ERR cmd_edit(cmd_ctx* ctx)
     // logmsg("attempting to load file '%s'", cstr_getbufptr(&tmp_filename));
     BUFFER editbuf = BUFFER_NULL;
     if (cstr_comparestri(&tmp_filename, ".unnamed") == 0) {
-	  buffer_setflags(unnamed_buffer, BUF_FLG_VISIBLE);
-	  editbuf = unnamed_buffer;
+      buffer_setflags(unnamed_buffer, BUF_FLG_VISIBLE);
+      editbuf = unnamed_buffer;
     }
     else if (cstr_comparestri(&tmp_filename, ".keys") == 0) {
-	  buffer_setflags(keys_buffer, BUF_FLG_VISIBLE);
-	  editbuf = keys_buffer;
+	  load_current_key_definitions(keys_buffer, profile);
+      buffer_setflags(keys_buffer, BUF_FLG_VISIBLE);
+      editbuf = keys_buffer;
     }
     else if (cstr_comparestri(&tmp_filename, ".dir") == 0) {
-	  buffer_setflags(dir_buffer, BUF_FLG_VISIBLE);
-	  editbuf = dir_buffer;
+      buffer_setflags(dir_buffer, BUF_FLG_VISIBLE);
+      editbuf = dir_buffer;
     }
     else {
-	  BUFFER foundbuf = buffers_find_eithername(&tmp_filename);
-	  if (foundbuf != BUFFER_NULL) {
-		// logmsg("found existing buffer");
-		editbuf = foundbuf;
-	  }
-	  else {
-		//logmsg("loading new buffer");
-		editbuf = buffer_alloc("", BUF_FLG_VISIBLE, 0);
-		err = buffer_load(editbuf, &tmp_filename, file_tab_expand);
-		if (err == POE_ERR_FILE_NOT_FOUND) {
-		  err = POE_ERR_OK;
-		  wins_set_message("New file");
-		}
-	  }
+      BUFFER foundbuf = buffers_find_eithername(&tmp_filename);
+      if (foundbuf != BUFFER_NULL) {
+        // logmsg("found existing buffer");
+        editbuf = foundbuf;
+      }
+      else {
+        //logmsg("loading new buffer");
+        editbuf = buffer_alloc("", BUF_FLG_VISIBLE, 0, default_profile);
+        err = buffer_load(editbuf, &tmp_filename, file_tab_expand);
+        if (err == POE_ERR_FILE_NOT_FOUND) {
+          err = POE_ERR_OK;
+          wins_set_message("New file");
+        }
+      }
     }
     
     // Switch to the buffer if we can.
     if (err == POE_ERR_OK && editbuf != BUFFER_NULL) {
-	  //logmsg("switching to buffer");
-	  wins_cur_switchbuffer(editbuf);
+      //logmsg("switching to buffer");
+      wins_cur_switchbuffer(editbuf);
     }
     else {
-	  buffer_free(editbuf);
+      buffer_free(editbuf);
     }
     cstr_destroy(&tmp_filename);
   }
@@ -1651,6 +1810,7 @@ POE_ERR cmd_edit(cmd_ctx* ctx)
 POE_ERR cmd_quit(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
+  markstack_cur_seal();
   WINPTR wnd; VIEWPTR view; BUFFER databuf;
   int row, col;
   xtract_data_context(ctx, &wnd, &view, &databuf, &row, &col);
@@ -1695,7 +1855,8 @@ POE_ERR cmd_save(cmd_ctx* ctx)
   else {
     const char* filename = next_parm_str(ctx, (const char*)NULL);
     const char* exp_mode = next_parm_str(ctx, (const char*)NULL);
-    bool file_blank_compress = blankcompress;
+	PROFILEPTR profile = buffer_get_profile(databuf);
+    bool file_blank_compress = profile->blankcompress;
     if (exp_mode != NULL) {
      if (strcasecmp(exp_mode, "notabs") == 0)
        file_blank_compress = true;
@@ -1704,7 +1865,7 @@ POE_ERR cmd_save(cmd_ctx* ctx)
     }
     // Save it appropriately
     if (filename == NULL) {
-     err = buffer_save(databuf, NULL, file_blank_compress);  
+     err = buffer_save(databuf, NULL, file_blank_compress);
     }
     else {
      cstr tmp_filename;
@@ -1758,8 +1919,9 @@ POE_ERR _cmd_locate(BUFFER buf,
   else if (direction < 0)
     buffer_left_wrap(buf, prow, pcol);
   bool bFound = false;
+  PROFILEPTR profile = buffer_get_profile(buf);
   if (!bSrchExact) {
-    switch (searchmode) {
+    switch (profile->searchmode) {
     case search_mode_exact:
       bSrchExact = true;
       break;
@@ -1911,6 +2073,7 @@ POE_ERR _cmd_change(cmd_ctx* ctx,
 POE_ERR cmd_change(cmd_ctx* ctx)
 {
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   POE_ERR err = POE_ERR_OK;
   const char* pat = next_parm_str(ctx, NULL);
   const char* repl = next_parm_str(ctx, NULL);
@@ -1949,6 +2112,7 @@ POE_ERR cmd_change(cmd_ctx* ctx)
 POE_ERR cmd_trim_leading(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
+  markstack_cur_seal();
   buffer_trimleft(ctx->targ_buf, ctx->targ_row, true);
   CMD_RETURN(POE_ERR_OK);
 }
@@ -1957,6 +2121,7 @@ POE_ERR cmd_trim_leading(cmd_ctx* ctx)
 POE_ERR cmd_trim_trailing(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
+  markstack_cur_seal();
   buffer_trimright(ctx->targ_buf, ctx->targ_row, true);
   CMD_RETURN(POE_ERR_OK);
 }
@@ -1979,9 +2144,7 @@ POE_ERR cmd_set_margins(cmd_ctx* ctx)
   leftmargin = next_parm_int(ctx, leftmargin);
   rightmargin = next_parm_int(ctx, rightmargin);
   paramargin = next_parm_int(ctx, leftmargin);
-  POE_ERR err = margins_set(&default_margins, leftmargin-1, rightmargin-1, paramargin-1);
-  if (err == POE_ERR_OK)
-    err = buffer_setmargins(ctx->data_buf, leftmargin-1, rightmargin-1, paramargin-1);
+  POE_ERR err = buffer_setmargins(ctx->data_buf, leftmargin-1, rightmargin-1, paramargin-1);
   CMD_RETURN(err);
 }
 
@@ -2010,24 +2173,35 @@ POE_ERR cmd_set_tabs(cmd_ctx* ctx)
     pivec_append(&tabstops, t1-1);
     pivec_append(&tabstops, t2-1);
     pivec_append(&tabstops, t3-1);
-    for (t3 = next_parm_int(ctx, -1); t3 >= 1; t3 = next_parm_int(ctx, -1)) {
+    for (t3 = next_parm_int(ctx, t3); t3 > t2; t3 = next_parm_int(ctx, t3)) {
       pivec_append(&tabstops, t3-1);
+      t1 = t2;
       t2 = t3;
     }
+    t1--;
     t2--;
     t3--;
-    int tab_step = t3-t2;
-    tabs_set(&default_tabstops, t3%tab_step, tab_step, &tabstops);
-    buffer_settabs(ctx->data_buf, &default_tabstops);
+    int tab_step = t2-t1;
+    //tabs_set(&default_tabstops, (t3%tab_step), tab_step, &tabstops);
+	struct tabstops_t tabs;
+	tabs_init(&tabs, (t3%tab_step), tab_step, &tabstops);
+    buffer_settabs(ctx->data_buf, &tabs);
+	tabs_destroy(&tabs);
     pivec_destroy(&tabstops);
   }
   else if (t1 >= 1 && t2 >= 1) {
-    tabs_set(&default_tabstops, t1-1, t2, NULL);
-    buffer_settabs(ctx->data_buf, &default_tabstops);
+    //tabs_set(&default_tabstops, t1-1, t2-t1, NULL);
+	struct tabstops_t tabs;
+	tabs_init(&tabs, t1-1, t2-t1, NULL);
+    buffer_settabs(ctx->data_buf, &tabs);
+	tabs_destroy(&tabs);
   }
   else if (t1 >= 1) {
-    tabs_set(&default_tabstops, 0, t1, NULL);
-    buffer_settabs(ctx->data_buf, &default_tabstops);
+    //tabs_set(&default_tabstops, 0, t1, NULL);
+	struct tabstops_t tabs;
+	tabs_init(&tabs, 0, t1, NULL);
+    buffer_settabs(ctx->data_buf, &tabs);
+	tabs_destroy(&tabs);
   }
   else {
     err = POE_ERR_TABS;
@@ -2044,7 +2218,7 @@ POE_ERR cmd_qry_tabs(cmd_ctx* ctx)
   buffer_gettabs(ctx->data_buf, &tabs);
   int i, n = pivec_count(&tabs.vtabs);
   if (n == 0) {
-    _printf_cmdline(ctx, "set tabs %d %d", tabs.start+1, tabs.start+tabs.step);
+    _printf_cmdline(ctx, "set tabs %d %d", tabs.start+1, tabs.start+tabs.step+1);
   }
   else {
     cstr s;
@@ -2067,6 +2241,11 @@ POE_ERR cmd_qry_key(cmd_ctx* ctx)
   CMD_ENTER(ctx);
   POE_ERR err = POE_ERR_OK;
   const char* keyname = next_parm_str(ctx, NULL);
+  if (keyname == NULL) {
+	wins_set_message("Press a key to identify");
+	wins_repaint_all();
+	keyname = ui_get_key();
+  }
   if (keyname != NULL) {
     cstr fmtted_def;
     cstr_init(&fmtted_def, 1024);
@@ -2075,6 +2254,10 @@ POE_ERR cmd_qry_key(cmd_ctx* ctx)
       _printf_cmdline(ctx, "%s", cstr_getbufptr(&fmtted_def));
       ctx->save_commandline = true;
     }
+	else {
+	  _printf_cmdline(ctx, "def %s = ", keyname);
+	  ctx->save_commandline = true;
+	}
   }
   CMD_RETURN(err);
 }
@@ -2085,14 +2268,15 @@ POE_ERR cmd_set_blankcompress(cmd_ctx* ctx)
   CMD_ENTER(ctx);
   POE_ERR err = POE_ERR_OK;
   const char* flag = next_parm_str(ctx, NULL);
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
   if (flag == NULL) {
     err = POE_ERR_SET_VAL_UNK;
   }
   else if (strcasecmp(flag, "ON") == 0) {
-    blankcompress = true;
+    profile->blankcompress = true;
   }
   else if (strcasecmp(flag, "OFF") == 0) {
-    blankcompress = false;
+    profile->blankcompress = false;
   }
   else {
     err = POE_ERR_SET_VAL_UNK;
@@ -2104,7 +2288,8 @@ POE_ERR cmd_set_blankcompress(cmd_ctx* ctx)
 POE_ERR cmd_qry_blankcompress(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
-  _printf_cmdline(ctx, "set blankcompress %s", blankcompress?"on":"off");
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+  _printf_cmdline(ctx, "set blankcompress %s", profile->blankcompress?"on":"off");
   ctx->save_commandline = true;
   CMD_RETURN(POE_ERR_OK);
 }
@@ -2115,14 +2300,15 @@ POE_ERR cmd_set_tabexpand(cmd_ctx* ctx)
   CMD_ENTER(ctx);
   POE_ERR err = POE_ERR_OK;
   const char* flag = next_parm_str(ctx, NULL);
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
   if (flag == NULL) {
     err = POE_ERR_SET_VAL_UNK;
   }
   else if (strcasecmp(flag, "ON") == 0) {
-    tabexpand = true;
+    profile->tabexpand = true;
   }
   else if (strcasecmp(flag, "OFF") == 0) {
-    tabexpand = false;
+    profile->tabexpand = false;
   }
   else {
     err = POE_ERR_SET_VAL_UNK;
@@ -2134,7 +2320,8 @@ POE_ERR cmd_set_tabexpand(cmd_ctx* ctx)
 POE_ERR cmd_qry_tabexpand(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
-  _printf_cmdline(ctx, "set tabexpand %s", tabexpand?"on":"off");
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+  _printf_cmdline(ctx, "set tabexpand %s", profile->tabexpand?"on":"off");
   ctx->save_commandline = true;
   CMD_RETURN(POE_ERR_OK);
 }
@@ -2149,7 +2336,8 @@ POE_ERR cmd_set_tabexpand_size(cmd_ctx* ctx)
     err = POE_ERR_SET_VAL_UNK;
   }
   else {
-	tabexpand_size = tabsize;
+	PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+	profile->tabexpand_size = tabsize;
   }
   CMD_RETURN(err);
 }
@@ -2158,7 +2346,8 @@ POE_ERR cmd_set_tabexpand_size(cmd_ctx* ctx)
 POE_ERR cmd_qry_tabexpand_size(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
-  _printf_cmdline(ctx, "set tabexpand size %s", tabexpand_size);
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+  _printf_cmdline(ctx, "set tabexpand size %s", profile->tabexpand_size);
   ctx->save_commandline = true;
   CMD_RETURN(POE_ERR_OK);
 }
@@ -2169,17 +2358,18 @@ POE_ERR cmd_set_searchcase(cmd_ctx* ctx)
   CMD_ENTER(ctx);
   POE_ERR err = POE_ERR_OK;
   const char* flag = next_parm_str(ctx, NULL);
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
   if (flag == NULL) {
     err = POE_ERR_SET_VAL_UNK;
   }
   else if (strcasecmp(flag, "EXACT") == 0) {
-    searchmode = search_mode_exact;
+    profile->searchmode = search_mode_exact;
   }
   else if (strcasecmp(flag, "ANY") == 0) {
-    searchmode = search_mode_any;
+    profile->searchmode = search_mode_any;
   }
   else if (strcasecmp(flag, "SMART") == 0) {
-    searchmode = search_mode_smart;
+    profile->searchmode = search_mode_smart;
   }
   else {
     err = POE_ERR_SET_VAL_UNK;
@@ -2191,7 +2381,8 @@ POE_ERR cmd_set_searchcase(cmd_ctx* ctx)
 POE_ERR cmd_qry_searchcase(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
-  switch (searchmode) {
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+  switch (profile->searchmode) {
   case search_mode_exact:
     _printf_cmdline(ctx, "set searchcase exact");
     break;
@@ -2249,7 +2440,7 @@ POE_ERR cmd_qry_hsplit(cmd_ctx* ctx)
 }
 
 
-POE_ERR cmd_incr_vsplit(cmd_ctx* ctx)
+POE_ERR cmd_move_split_right(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
   int vsplit = next_parm_int(ctx, 0);
@@ -2263,7 +2454,7 @@ POE_ERR cmd_incr_vsplit(cmd_ctx* ctx)
 }
 
 
-POE_ERR cmd_decr_vsplit(cmd_ctx* ctx)
+POE_ERR cmd_move_split_left(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
   int vsplit = next_parm_int(ctx, 0);
@@ -2277,7 +2468,7 @@ POE_ERR cmd_decr_vsplit(cmd_ctx* ctx)
 }
 
 
-POE_ERR cmd_incr_hsplit(cmd_ctx* ctx)
+POE_ERR cmd_move_split_down(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
   int hsplit = next_parm_int(ctx, 0);
@@ -2291,7 +2482,7 @@ POE_ERR cmd_incr_hsplit(cmd_ctx* ctx)
 }
 
 
-POE_ERR cmd_decr_hsplit(cmd_ctx* ctx)
+POE_ERR cmd_move_split_up(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
   int hsplit = next_parm_int(ctx, 0);
@@ -2308,7 +2499,8 @@ POE_ERR cmd_decr_hsplit(cmd_ctx* ctx)
 POE_ERR cmd_qry_wrap(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
-  _printf_cmdline(ctx, "set wrap %s", autowrap?"ON":"OFF");
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+  _printf_cmdline(ctx, "set wrap %s", profile->autowrap?"ON":"OFF");
   ctx->save_commandline = true;
   CMD_RETURN(POE_ERR_OK);
 }
@@ -2319,12 +2511,13 @@ POE_ERR cmd_set_wrap(cmd_ctx* ctx)
   CMD_ENTER(ctx);
   POE_ERR err = POE_ERR_OK;
   const char* parm = next_parm_str(ctx, NULL);
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
   if (parm == NULL)
 	err = POE_ERR_SET_VAL_UNK;
   else if (strcasecmp(parm, "ON") == 0)
-	autowrap = true;
+	profile->autowrap = true;
   else if (strcasecmp(parm, "OFF") == 0)
-	autowrap = false;
+	profile->autowrap = false;
   else
 	err = POE_ERR_SET_VAL_UNK;
   CMD_RETURN(err);
@@ -2335,6 +2528,7 @@ POE_ERR cmd_set_wrap(cmd_ctx* ctx)
 POE_ERR cmd_center_in_margins(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  markstack_cur_seal();
   enum marktype typ;
   int l1, c1, l2, c2;
   POE_ERR err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
@@ -2411,6 +2605,69 @@ POE_ERR cmd_define(cmd_ctx* ctx)
 }
 
 
+POE_ERR cmd_qry_chr(cmd_ctx* ctx)
+{
+  CMD_ENTER(ctx);
+  char c = buffer_getchar(ctx->targ_buf, ctx->targ_row, ctx->targ_col);
+  _printf_cmdline(ctx, "char %d", c);
+  POE_ERR err = POE_ERR_OK;
+  CMD_RETURN(err);
+}
+
+
+
+POE_ERR cmd_copy_to_command(cmd_ctx* ctx)
+{
+  CMD_ENTER_DATAONLY(ctx);
+  struct line_t* line = buffer_get(ctx->data_buf, ctx->data_row);
+  cmd_erase_command_line(ctx);
+  buffer_insertstrn(ctx->cmd_buf, 0, 0, cstr_getbufptr(&line->txt), cstr_count(&line->txt), true);
+  view_move_cursor_to(ctx->cmd_view, 0, 0);
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+
+POE_ERR cmd_copy_from_command(cmd_ctx* ctx)
+{
+  CMD_ENTER_DATAONLY(ctx);
+  struct line_t* line = buffer_get(ctx->cmd_buf, 0);
+  buffer_insertblanklines(ctx->data_buf, ctx->data_row+1, 1, true);
+  buffer_insertstrn(ctx->data_buf, ctx->data_row+1, 0, cstr_getbufptr(&line->txt), cstr_count(&line->txt), true);
+  view_move_cursor_to(ctx->cmd_view, 0, 0);
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+
+POE_ERR cmd_qry_oncommand(cmd_ctx* ctx)
+{
+  CMD_ENTER(ctx);
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+  _printf_cmdline(ctx, "set oncommand %s", profile->oncommand?"ON":"OFF");
+  ctx->save_commandline = true;
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+POE_ERR cmd_set_oncommand(cmd_ctx* ctx)
+{
+  CMD_ENTER(ctx);
+  POE_ERR err = POE_ERR_OK;
+  const char* parm = next_parm_str(ctx, NULL);
+  PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+  if (parm == NULL)
+	err = POE_ERR_SET_VAL_UNK;
+  else if (strcasecmp(parm, "ON") == 0)
+	profile->oncommand = true;
+  else if (strcasecmp(parm, "OFF") == 0)
+	profile->oncommand = false;
+  else
+	err = POE_ERR_SET_VAL_UNK;
+  CMD_RETURN(err);
+}
+
+
 
 
 ////////////////////////////////////////
@@ -2425,9 +2682,11 @@ POE_ERR cmd_define(cmd_ctx* ctx)
 void defcmds(void)
 {
   DEFCMD(cmd_qry_blankcompress,        "?", "BLANKCOMPRESS");
+  DEFCMD(cmd_qry_chr,                  "?", "CHAR");
   DEFCMD(cmd_qry_hsplit,               "?", "HSPLIT");
   DEFCMD(cmd_qry_key,                  "?", "KEY");
   DEFCMD(cmd_qry_margins,              "?", "MARGINS");
+  DEFCMD(cmd_qry_oncommand,            "?", "ONCOMMAND");
   DEFCMD(cmd_qry_searchcase,           "?", "SEARCHCASE");
   DEFCMD(cmd_qry_tabexpand_size,       "?", "TABEXPAND", "SIZE");
   DEFCMD(cmd_qry_tabexpand,            "?", "TABEXPAND");
@@ -2435,10 +2694,12 @@ void defcmds(void)
   DEFCMD(cmd_qry_vsplit,               "?", "VSPLIT");
   DEFCMD(cmd_qry_wrap,                 "?", "WRAP");
 
+  DEFCMD(cmd_backtab_paragraph,        "BACKTAB",     "PARAGRAPH");
   DEFCMD(cmd_backtab_word,             "BACKTAB",     "WORD");
   DEFCMD(cmd_backtab,                  "BACKTAB");    
   DEFCMD(cmd_begin_line,               "BEGIN",       "LINE");
   DEFCMD(cmd_begin_mark,               "BEGIN",       "MARK");
+  DEFCMD(cmd_begin_paragraph,          "BEGIN",       "PARAGRAPH");
   DEFCMD(cmd_begin_word,               "BEGIN",       "WORD");
   DEFCMD(cmd_bottom_edge,              "BOTTOM",      "EDGE");
   DEFCMD(cmd_bottom,                   "BOTTOM");     
@@ -2446,18 +2707,19 @@ void defcmds(void)
   DEFCMD(cmd_center_in_margins,        "CENTER",      "IN",      "MARGINS");
   DEFCMD(cmd_center_line,              "CENTER",      "LINE");
   DEFCMD(cmd_change,                   "CHANGE");
-  DEFCMD(cmd_chr,                      "CHR");        
+  DEFCMD(cmd_char,                     "CHAR");
   DEFCMD(cmd_clear_marks,              "CLEAR",       "MARKS");
   DEFCMD(cmd_column,                   "COLUMN");
   DEFCMD(cmd_command_toggle,           "COMMAND",     "TOGGLE");
   DEFCMD(cmd_confirm_change,           "CONFIRM",     "CHANGE");
   DEFCMD(cmd_copy_mark,                "COPY",        "MARK");
+  DEFCMD(cmd_copy_from_command,        "COPY",        "FROM", "COMMAND");
+  DEFCMD(cmd_copy_to_command,          "COPY",        "TO", "COMMAND");
   DEFCMD(cmd_cursor_command,           "CURSOR",      "COMMAND");
   DEFCMD(cmd_cursor_data,              "CURSOR",      "DATA");
                                                       
-  DEFCMD(cmd_decr_hsplit,              "DECR",        "HSPLIT");
-  DEFCMD(cmd_decr_vsplit,              "DECR",        "VSPLIT");
   DEFCMD(cmd_define,                   "DEFINE");
+  DEFCMD(cmd_delete_char_join,         "DELETE",      "CHAR",    "JOIN");
   DEFCMD(cmd_delete_char,              "DELETE",      "CHAR");
   DEFCMD(cmd_delete_line,              "DELETE",      "LINE");
   DEFCMD(cmd_delete_mark,              "DELETE",      "MARK");
@@ -2467,6 +2729,7 @@ void defcmds(void)
   DEFCMD(cmd_edit,                     "EDIT");
   DEFCMD(cmd_end_line,                 "END",         "LINE");
   DEFCMD(cmd_end_mark,                 "END",         "MARK");
+  DEFCMD(cmd_end_paragraph,            "END",         "PARAGRAPH");
   DEFCMD(cmd_end_word,                 "END",         "WORD");
   DEFCMD(cmd_erase_begin_line,         "ERASE",       "BEGIN",   "LINE");
   DEFCMD(cmd_erase_command_line,       "ERASE",       "COMMAND", "LINE");
@@ -2481,11 +2744,10 @@ void defcmds(void)
   DEFCMD(cmd_find_prev_blank_line,     "FIND",        "PREV",    "BLANK", "LINE");
   DEFCMD(cmd_first_nonblank,           "FIRST",       "NONBLANK");
                                                       
-  DEFCMD(cmd_incr_hsplit,              "INCR",        "HSPLIT");
-  DEFCMD(cmd_incr_vsplit,              "INCR",        "VSPLIT");
   DEFCMD(cmd_indent,                   "INDENT");     
   DEFCMD(cmd_insert_line,              "INSERT",      "LINE");
   DEFCMD(cmd_insert_mode,              "INSERT",      "MODE");
+  DEFCMD(cmd_insert_text,              "INSERT",      "TEXT");
   DEFCMD(cmd_insert_toggle,            "INSERT",      "TOGGLE");
 
   DEFCMD(cmd_join,                     "JOIN");
@@ -2501,6 +2763,10 @@ void defcmds(void)
   DEFCMD(cmd_mark_char,                "MARK",        "CHAR");
   DEFCMD(cmd_mark_line,                "MARK",        "LINE");
   DEFCMD(cmd_move_mark,                "MOVE",        "MARK");
+  DEFCMD(cmd_move_split_down,          "MOVE",        "SPLITTER", "DOWN");
+  DEFCMD(cmd_move_split_left,          "MOVE",        "SPLITTER", "LEFT");
+  DEFCMD(cmd_move_split_right,         "MOVE",        "SPLITTER", "RIGHT");
+  DEFCMD(cmd_move_split_up,            "MOVE",        "SPLITTER", "UP");
   DEFCMD(cmd_move_view_down,           "MOVE",        "VIEW",    "DOWN");
   DEFCMD(cmd_move_view_left,           "MOVE",        "VIEW",    "LEFT");
   DEFCMD(cmd_move_view_right,          "MOVE",        "VIEW",    "RIGHT");
@@ -2536,6 +2802,7 @@ void defcmds(void)
   DEFCMD(cmd_set_blankcompress,        "SET",         "BLANKCOMPRESS");
   DEFCMD(cmd_set_hsplit,               "SET",         "HSPLIT");
   DEFCMD(cmd_set_margins,              "SET",         "MARGINS");
+  DEFCMD(cmd_set_oncommand,            "SET",         "ONCOMMAND");
   DEFCMD(cmd_set_searchcase,           "SET",         "SEARCHCASE");
   DEFCMD(cmd_set_tabexpand_size,       "SET",         "TABEXPAND", "SIZE");
   DEFCMD(cmd_set_tabexpand,            "SET",         "TABEXPAND");
@@ -2548,6 +2815,7 @@ void defcmds(void)
   DEFCMD(cmd_split_screen,             "SPLIT",       "SCREEN");
   DEFCMD(cmd_split,                    "SPLIT");
                                                       
+  DEFCMD(cmd_tab_paragraph,            "TAB",         "PARAGRAPH");
   DEFCMD(cmd_tab_word,                 "TAB",         "WORD");
   DEFCMD(cmd_tab,                      "TAB");        
   DEFCMD(cmd_trim_leading,             "TRIM",        "LEADING");

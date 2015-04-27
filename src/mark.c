@@ -15,8 +15,9 @@
 #include "cstr.h"
 #include "bufid.h"
 #include "mark.h"
-#include "key_interp.h"
+#include "margins.h"
 #include "tabstops.h"
+#include "key_interp.h"
 #include "buffer.h"
 
 
@@ -35,6 +36,7 @@ struct mark_t {
   unsigned short int firstlmark, firstcmark;
   void* data;
 };
+
 
 
 struct pivec_t/*MARK*/ _all_marks;
@@ -155,6 +157,7 @@ void mark_unmark(MARK mark)
   TRACE_ENTER;
   VALIDATEMARK(mark);
   mark->buf = BUFFER_NULL;
+  mark->flags &= ~(MARK_FLG_STARTED|MARK_FLG_ENDED|MARK_FLG_SEALED);
   mark->typ = Marktype_None;
   mark->l1 = 0;
   mark->c1 = 0;
@@ -188,6 +191,24 @@ int marks_count()
   TRACE_ENTER;
   int rval = pivec_count(&_all_marks);
   TRACE_RETURN(rval);
+}
+
+
+void mark_free_marks_in_buffer(BUFFER buf)
+{
+  TRACE_ENTER;
+  int i;
+  for (i = 0; i < pivec_count(&_all_marks); ) {
+    MARK mark = (MARK)pivec_get(&_all_marks, i);
+	if (mark->buf == buf) {
+	  _mark_free(mark);
+	  pivec_remove(&_all_marks, i);
+	}
+	else {
+	  i++;
+	}
+  }
+  TRACE_EXIT;
 }
 
 
@@ -420,31 +441,31 @@ void _mark_upd_removedlines(MARK mark, BUFFER buf, int line, int lines_removed)
 
   switch (mark->typ) {
   case Marktype_Line: case Marktype_Char:
-	// l1 0  l2 3  line 2  lines_removed 1
-	// 2+1 <= 0
+        // l1 0  l2 3  line 2  lines_removed 1
+        // 2+1 <= 0
     if (line+lines_removed <= l1) {
       // Happened completely before mark - move both ends up
       mark->l1 -= lines_removed;
       mark->l2 -= lines_removed;
     }
-	// 2 >= 0 && 2+1 < 3
-	else if (line >= l1 && line+lines_removed <= l2) {
+        // 2 >= 0 && 2+1 < 3
+        else if (line >= l1 && line+lines_removed <= l2) {
       // Happened completely inside marked region
       mark->l2 = max(line, l2 - lines_removed);
     }
-	// 2 < 0 && 2+1<3
-	else if (line < l1 && line+lines_removed < l2) {
+        // 2 < 0 && 2+1<3
+        else if (line < l1 && line+lines_removed < l2) {
       // Flows into marked region, ends inside it
       mark->l1 = max(line, l1 - lines_removed);
       mark->l2 = max(mark->l1, l2 - lines_removed);
     }
-	// 2>=0 && 2+1>3
-	else if (line >= l1 && line+lines_removed > l2) {
+        // 2>=0 && 2+1>3
+        else if (line >= l1 && line+lines_removed > l2) {
       // Happened inside region, ends outside it
       mark->l2 = max(line, l2 - lines_removed);
     }
-	// 2<=0 && 2+1>=3
-	else if (line <= l1 && line+lines_removed >= l2) {
+        // 2<=0 && 2+1>=3
+        else if (line <= l1 && line+lines_removed >= l2) {
       // Envelopes marked region
       if (mark_tstflags(mark, MARK_FLG_BOOKMARK)) {
         // Bookmarks are special in that they represent a position,
@@ -455,9 +476,9 @@ void _mark_upd_removedlines(MARK mark, BUFFER buf, int line, int lines_removed)
         mark_unmark(mark);
       }
     }
-	else {
+        else {
       poe_err(1, "Missing case in marks_update_removelines l1 %d  l2 %d  line %d  lines_removed %d",
-			  mark->l1, mark->l2, line, lines_removed);
+                          mark->l1, mark->l2, line, lines_removed);
     }
     break;
   case Marktype_Block:
@@ -689,7 +710,7 @@ void _mark_upd_removedchars(MARK mark, BUFFER buf, int line, int col, int chars_
         mark->c2 = col;
       }
       else {
-		// no affect
+                // no affect
       }
     }
   case Marktype_None: default:
@@ -803,6 +824,7 @@ POE_ERR mark_start(MARK mark, enum marktype typ, BUFFER buf, int line, int col)
   mark->l1 = mark->l2 = line;
   mark->c1 = mark->c2 = col;
   mark->firstlmark = mark->firstcmark = 1;
+  mark_setflags(mark, MARK_FLG_STARTED);
   TRACE_RETURN(POE_ERR_OK);
 }
 
@@ -815,6 +837,9 @@ int mark_extend(MARK mark, enum marktype typ, BUFFER buf, int line, int col)
     TRACE_RETURN(POE_ERR_MARK_TYPE_CONFLICT);
   if (mark->buf != buf)
     TRACE_RETURN(POE_ERR_MARKED_BLOCK_EXISTS);
+  if (mark_tstflags(mark, MARK_FLG_SEALED))
+    TRACE_RETURN(POE_ERR_MARKED_BLOCK_EXISTS);
+  mark_setflags(mark, MARK_FLG_ENDED);
   if (mark->firstlmark)
     mark->l2 = line;
   else
@@ -827,6 +852,17 @@ int mark_extend(MARK mark, enum marktype typ, BUFFER buf, int line, int col)
   TRACE_RETURN(POE_ERR_OK);
 }
 
+
+void mark_seal(MARK mark)
+{
+  TRACE_ENTER;
+  VALIDATEMARK(mark);
+  if (mark->typ == Marktype_None) 
+    TRACE_EXIT;
+  if (mark_tstflags(mark, MARK_FLG_ENDED))
+	mark_setflags(mark, MARK_FLG_SEALED);
+  TRACE_EXIT;
+}
 
 
 

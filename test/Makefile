@@ -4,7 +4,7 @@ include ../Makefile.inc
 CFLAGS = $(PRJCFLAGS) -I../src/
 
 EXE = ../bin/poetest
-_POEOBJS = tabstops.o mark.o markstack.o utils.o trace.o vec.o cstr.o buffer.o margins.o editor_globals.o logging.o poe_err.o poe_exit.o
+_POEOBJS = tabstops.o mark.o markstack.o utils.o trace.o vec.o cstr.o buffer.o margins.o editor_globals.o logging.o poe_err.o poe_exit.o key_interp.o window.o view.o cmd_interp.o parser.o commands.o getkey.o
 POEOBJS = ${_POEOBJS:S/^/..\/src\//}
 OBJS = test.o testing.o test_tabstops.o test_mark.o test_markstack.o test_vec.o test_cstr.o test_buffer.o 
 OBJLIBS = 

@@ -3,8 +3,8 @@
 #PROFILE = debug
 PROFILE = release
 
-#PREFIX_RELEASE = /usr/local
-PREFIX_RELEASE = ${HOME}
+PREFIX_RELEASE = /usr/local
+#PREFIX_RELEASE = ${HOME}
 PREFIX_DEBUG = ${HOME}
 
 # useful defines that help with debugging when things get wierd:
@@ -16,23 +16,23 @@ PREFIX_DEBUG = ${HOME}
 PRJCFLAGS_RELEASE = -Os -Wall -DPOE_DBG_TRON -DPOE_DBG_MARKPTRS -DPOE_DBG_BUFPTRS -DPOE_DBG_LIM
 #PRJCFLAGS_RELEASE = -Os -Wall
 
-PRJCFLAGS_DEBUG = -g -O0 -Wall -DPOE_DBG_TRON -DPOE_DBG_MARKPTRS -DPOE_DBG_BUFPTRS -DPOE_DBG_LIM
-#PRJCFLAGS_DEBUG = -g -O0 -Wall
+#PRJCFLAGS_DEBUG = -g -O0 -Wall -DPOE_DBG_TRON -DPOE_DBG_MARKPTRS -DPOE_DBG_BUFPTRS -DPOE_DBG_LIM
+PRJCFLAGS_DEBUG = -g -O0 -Wall
 
 LDFLAGS_RELEASE = -flto
 LDFLAGS_DEBUG =
 
-ARFLAGS_RELEASE	=
+ARFLAGS_RELEASE =
 ARFLAGS_DEBUG =
 
 
-CC	= cc
-LD	= cc
-AR	= ar
-RANLIB	= ranlib
-RM	= rm
+CC      = cc
+LD      = cc
+AR      = ar
+RANLIB  = ranlib
+RM      = rm
 ECHO = echo
-SHELL	= /bin/sh
+SHELL   = /bin/sh
 
 
 .if "${PROFILE}" == "release"

@@ -12,8 +12,9 @@
 #include "bufid.h"
 #include "mark.h"
 #include "markstack.h"
-#include "key_interp.h"
+#include "margins.h"
 #include "tabstops.h"
+#include "key_interp.h"
 #include "buffer.h"
 
 
@@ -43,6 +44,26 @@ void shutdown_markstack()
 //
 // markstack
 //
+
+void markstack_pop_marks_in_buffer(BUFFER buf)
+{
+  TRACE_ENTER;
+  int i;
+  for (i = 0; i < pivec_count(&_mark_stack); ) {
+        MARK mark = (MARK)pivec_get(&_mark_stack, i);
+        BUFFER markbuf = BUFFER_NULL;
+        POE_ERR err = mark_get_buffer(mark, &markbuf);
+        if (err == POE_ERR_OK && markbuf == buf) {
+          pivec_remove(&_mark_stack, i);
+        }
+        else {
+          i++;
+        }
+  }
+  _ensure_have_mark();
+  TRACE_EXIT;
+}
+
 
 MARK markstack_push()
 {
@@ -234,6 +255,17 @@ POE_ERR markstack_cur_extend(enum marktype typ, BUFFER buf, int line, int col)
   else
     rval = POE_ERR_NO_MARKED_AREA;
   TRACE_RETURN(rval);
+}
+
+
+void markstack_cur_seal(void)
+{
+  TRACE_ENTER;
+  _ensure_have_mark();
+  MARK curmark = markstack_current();
+  if (mark_exists(curmark))
+    mark_seal(curmark);
+  TRACE_EXIT;
 }
 
 

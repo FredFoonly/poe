@@ -690,14 +690,14 @@ void _win_init(WINPTR pwin, int slot, int t, int l, int b, int r)
   static int cmd_buf_num = 0;
   char cmd_buf_name[64];
   snprintf(cmd_buf_name, sizeof cmd_buf_name, "CMD_%d", ++cmd_buf_num);
-  pwin->cmd_buf = buffer_alloc(cmd_buf_name, BUF_FLG_INTERNAL|BUF_FLG_CMDLINE, 1);
+  pwin->cmd_buf = buffer_alloc(cmd_buf_name, BUF_FLG_INTERNAL|BUF_FLG_CMDLINE, 1, default_profile);
   pwin->cmd_view = view_alloc(pwin->cmd_buf, 1, pwin->r - pwin->l + 1);
   buffer_ensure_min_lines(pwin->cmd_buf, false);
   
   _win_move(pwin, t, l, b, r);
   
   cstr_init(&pwin->msg_txt, 256);
-  pwin->in_data = false;
+  pwin->in_data = default_profile->oncommand == false;
   TRACE_EXIT;
 }
 
@@ -918,8 +918,14 @@ bool update_context(cmd_ctx* ctx)
     ctx->data_buf = pwnd->data_buf;
     ctx->cmd_view = pwnd->cmd_view;
     ctx->cmd_buf = pwnd->cmd_buf;
-    view_get_cursor(pwnd->data_view, &ctx->data_row, &ctx->data_col);
-    view_get_cursor(pwnd->cmd_view, &ctx->cmd_row, &ctx->cmd_col);
+	if (ctx->data_view != NULL)
+	  view_get_cursor(pwnd->data_view, &ctx->data_row, &ctx->data_col);
+	else
+	  ctx->data_row = ctx->data_col = 0;
+	if (ctx->cmd_view != NULL)
+	  view_get_cursor(pwnd->cmd_view, &ctx->cmd_row, &ctx->cmd_col);
+	else
+	  ctx->cmd_row = ctx->cmd_col = 0;
     if (ctx->src_is_commandline) {
       //logmsg("update_context cmdline, targ = data");
       // Commands entered from the commandline always target the data area
@@ -944,7 +950,7 @@ bool update_context(cmd_ctx* ctx)
       ctx->targ_row = ctx->cmd_row;
       ctx->targ_col = ctx->cmd_col;
     }
-    rc = true;
+    rc = ctx->data_view != NULL && ctx->cmd_view != NULL;
   }
   TRACE_RETURN(rc);
 }
@@ -1078,8 +1084,7 @@ void _win_repaint(WINPTR pwin, int slot)
       bool in_ctrl = false;
       if (in_txt) {
         dispch = disptxt[j];
-        if (iscntrl(dispch)) {
-          //logmsg("drawing control char %d", dispch);
+        if (dispch == '\0' || iscntrl(dispch)) {
           dispch = '@' + dispch;
           bkgdset(' ' | COLOR_PAIR(C_CTRL_TXT) | A_CTRL_TXT);
           in_ctrl = true;

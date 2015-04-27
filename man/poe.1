@@ -1,0 +1,1721 @@
+.TH poe "April 24, 2015" "version 0.1" "USER COMMANDS"
+.SH NAME
+poe \- lightweight IBM-style editor
+.SH SYNOPSIS
+.B poe
+[\-help] [\-logerr] [\-logmsg] [-escdelay msec] file ...
+.SH DESCRIPTION
+Poe is a text editor in the IBM family of editors.  Unlike many other 
+programmer's editors, it is intended to be a fast and lightweight editor, 
+in this respect it shares the spirit of MicroEmacs and BSD vi more than 
+than GNU Emacs or VIM.  The most direct inspiration for POE was a 
+1980's-era editor for DOS called Personal Editor (aka PE), which was 
+written by an IBM employee named Jim Wylie.
+.PP
+Characteristics of the IBM style of editor includes cartesian coordinate 
+addressing of the text buffer, multiple types of text selections, 
+prominent use of the command line, and folding of text lines based on 
+filter criteria such as indentation level or presence of search terms.  
+Some of these characteristics survive in a few scattered editors whose 
+lineage derives from the IBM editors (e.g.  SlickEdit), and a few of them 
+have been emulated to some degree by other modern editors.  VIM has some 
+concept of folding, for example, and GNU Emacs supports some rectangular 
+commands.  But these are generally implemented awkwardly and in an 
+inconsistent manner.  
+.PP
+Poe is extremely configurable (though not to the level of Vim or GNU 
+Emacs) through its profile file "poe.pro".  This is installed in the 
+directory /usr/local/share/poe by default.  At startup, poe will search 
+for this file in the path POE_PROFILE_PATH, by default this path is set to 
+.:~/.poe:/usr/local/share/poe.  The profile file consists of a sequence of 
+poe commands, one command per line.  Comment lines are denoted by an 
+octothorpe character (#) as the first nonblank character on the line.  
+.SH SCREEN
+Poe breaks the screen up into four separate areas.  The topmost area is 
+the data area, and uses white text on a blue background.  This is where 
+editing activities takes place.  The next area is the command line and 
+uses white text on a green background.  Text entered here will be 
+interpreted as Poe commands.  The third area is the status line, and 
+contains the file name, cursor position, and editing mode 
+(Insert/Replace).  The final area is the message line where error messages 
+appear.  
+.SH CURSOR ADDRESSING
+Poe, like all IBM-style editors, uses cartesian cursor addressing instead 
+of point-based addressing like Emacs and Vi.  This means that the 
+fundamental unit of cursor positioning is the row and column, not the 
+position within the text.  Poe has no problem moving the cursor beyond the 
+end of the row, and allows editing beyond the end of the row - the row 
+will be extended with spaces as needed.  
+.SH WORD WRAP
+By default, Poe performs automatic word-wrapping at all times.  The 
+default margins are set to 1 and 256, so this should not be triggered 
+unless you paste in some really awful line.  Automatic word wrapping can 
+be disabled with the 
+.I SET WRAP OFF
+command.
+.SH MARGINS
+Poe allows you to set a left, right, and paragraph margin.  The paragraph 
+margin is only used by the \fIREFLOW\fP command for the first line of the 
+paragraph.  When word wrapping or reflowing a paragraph, the first line of 
+the text is aligned between the paragraph margin and right margin, and the 
+rest of the lines are aligned between the left margin and right margin.  
+The margins can be changed with the \fISET MARGINS\fP command.
+.SH TAB STOPS
+Poe allows tab stops to be set at any combination of columns using the 
+\fISET TABS\fP command.  The simplest version is \fISET TABS <col>\fP and 
+will set tab stops starting at column <col> and repeating every <col> 
+columns afterward.  The full version is \fISET TABS <col1> <col2> <col3> 
+...\fP and will set the tab stops at each column specified, and repeating 
+from the last specified column by the step from the next-to-last column.  
+.SH MARKS
+Poe supports three different types of text regions:  line, character, and 
+block.  There are a variety of operations on these marks, such as 
+\fIDELETE MARK\fP, \fICOPY MARK\fP, \fIMOVE MARK\fP, \fIFILL MARK\fP,
+and \fIOVERLAY MARK\fP.
+.SH LINE MARKS
+Line marks are used to select a contiguous set of lines in the text.  The
+\fIA-L\fP key is used to indicate the first and last marked lines.
+.SH CHARACTER MARKS
+Character marks allow the selection of text between two character 
+positions in the text - they are the most similar to the selection regions 
+used in other editors.  The \fIA-C\fP key is used to indicate the 
+beginning (row,column) and ending (row, column) positions.  
+.SH BLOCK MARKS
+Block marks allow the selection of an arbitrary rectangular region of 
+text.  The \fIA-B\fP key is used to mark the upper left and lower right 
+corners of the region.  
+.SH UNDO
+Poe does not currently implement any form of undo.  The closest it has to 
+this is the \fI.unnamed\fP file, which is an internal file where Poe saves 
+text before it makes any major changes to it.  This file can be edited 
+with the command \fIE .UNNAMED\fP.  If you make a mistake, you can bring 
+up the .unnamed file and copy the lines back out into your source file.  
+.PP
+The long-term goal is to turn this file into a file of incremental diffs, 
+so you would be able to find all changes in it, and it could be used as 
+the undo stack for a traditional undo/redo facility.  One of the nice 
+things about the .unnamed buffer is that if you need to correct a mistake 
+made some time ago, you can go down the .unnamed file to find the original 
+lines and copy them over without having to undo all the changes in between.  
+.SH OPTIONS
+.TP
+\fI\-help\fP
+Display a brief summary of the options.
+.TP
+\fI\-logerr\fP
+Write errors to ~/.poe/err.log
+.TP
+\fI\-logmsg\fP
+Write debugging messages to ~/.poe/msg.log
+.TP
+\fI\-escdelay msec\fP
+Set the NCurses escape delay to msec.
+.TP
+\fIfilename...\fP
+Poe will attempt to load the files into the editor at startup. 
+.SH EXIT STATUS
+Poe returns a zero exit status if it exits normally.  Non-zero is returned
+in case of fatal failure.
+.SH STANDARD KEY BINDINGS
+The following describes the keys as they are defined in the standard 
+poe.pro profile file.
+.SH CURSOR MOVEMENT KEYS
+.RS
+.SS UP
+The Up key moves the cursor up one line towards the top of the file.  
+.SS DOWN 
+Move the cursor down one line.  
+.SS LEFT
+Move the cursor down one line.  
+.SS RIGHT 
+Move the cursor down one line.  
+.SS PGUP
+Move the cursor up by the number of lines on the screen, adjusting 
+the viewport to keep the line roughly centered in the window.  
+.SS PGDN 
+Move the cursor down by the number of lines on the screen, adjusting 
+the viewport to keep the line roughly centered in the window.  
+.SS HOME
+Move the cursor to the beginning of the line.  
+.SS END
+Move the cursor to the end of the line.  
+.SS ESC
+Toggles the cursor between the command line and the data area.  
+.SS TAB
+Moves the cursor to the next tab stop.  
+.SS S-TAB
+Moves the cursor to start of the previous word.  
+.SS C-LEFT
+Moves the cursor to start of the previous word.  
+.SS C-RIGHT
+Moves the cursor to the next word.  
+.SS C-UP
+Moves the cursor up 20 lines.  
+.SS C-DOWN
+Moves the cursor down 20 lines.  
+.SS C-PGDN
+Moves the cursor to the bottom edge of the window.  
+.SS C-PGUP
+Moves the cursor to the top edge of the window.  
+.SS C-HOME
+Moves the cursor to the top of the file.  
+.SS C-END
+Moves the cursor to the bottom line of the file.  
+.SS C-A
+Moves the cursor to the start of the line.  
+.SS C-E
+Moves the cursor to the end of the line.  
+.SS A-Y
+Moves the cursor to the beginning of the current marked region.  If the 
+current mark is a line mark then the cursor moves to the top line of the 
+marked area, but stays in the same column.  If it is a character mark or 
+block mark then the cursor moves to the upper left corner of the mark.  
+.SS A-E
+Moves the cursor to the end of the marked area.  If the current mark is a 
+line mark then the cursor moves to the bottom line of the marked area but 
+stays in the same column.  If it is a character mark or block mark then 
+the cursor moves to the upper left corner of the mark.  
+.SS A-LEFT
+Moves the cursor left 40 characters.  
+.SS A-RIGHT
+Moves the cursor right 40 characters.  
+.SS A-UP
+Moves the cursor up 20 lines.  
+.SS A-DOWN
+Moves the cursor down 20 lines.  
+.SH EDITING KEYS
+.SS INSERT
+Toggles between insert and replace modes.  
+.SS DEL
+Deletes the character underneath the cursor.  
+.SS ENTER
+Inserts a new line underneath the current line, and indent the cursor 
+underneath the previous line.  
+.SS BACKSPACE
+Deletes the character before the cursor.  If the cursor is in column 1, 
+then it deletes the character underneath the cursor.  
+.SS F5
+Deletes the current line and positions the cursor at the start of the line.  
+.SS F6
+Deletes from the cursor to the end of the current line.  
+.SS F9
+Inserts a blank line beneath the current line.  The cursor position does 
+not change.  
+.SS F10
+Inserts a blank line beneath the current line, and moves the cursor to the 
+new line aligned underneath the start of the previous line.  
+.SS C-C
+Centers the current line between the margins.  
+.SS C-F
+Inserts a copy of the command line beneath the current line.  
+.SS C-K
+Delete from the cursor to the end of the line.  
+.SS C-N
+Move the cursor down 60 lines.  
+.SS C-R
+Duplicate the current line.  
+.SS C-T
+Copy the current line to the command line.  
+.SS C-F1 ... C-F10
+Inserts 1-10 lines after the current line.  
+.SS S-F3
+Reformats the current marked area.  The marked region must be a line mark.  
+.SS S-F7
+Shifts the marked region left 1 space.  
+.SS S-F8
+Shifts the marked region right 1 space.  
+.SS A-B
+Starts/Extends a block mark.  
+.SS A-C
+Starts/Extends a character mark.  
+.SS A-D
+Delete the marked area.  
+.SS A-F
+Fills the marked area with a character supplied from the keyboard.  
+.SS A-J
+Joins the current line with the next line.  
+.SS A-L
+Starts/Extends a line mark.  
+.SS A-M
+Moves the marked area to the cursor position.  If the mark is a line 
+region then the text will be inserted beneath the current line.  If it is 
+a block region then the text will be shifted right to provide space.  
+.SS A-O
+Overlays the marked region to the cursor position.  
+.SS A-P
+Reformat the paragraph starting at the current line, then moves the cursor 
+to the start of the next paragraph.  
+.SS A-S
+Split the current line at the cursor position.  
+.SS A-U
+Destroy the mark.  This removes the hilighting, and allows the user to 
+place a new mark in a new location or a new mark type.  
+.SH MISCELLANEOUS KEYS 
+.SS C-L
+Refresh the screen, and center the current line in the center of the window.  
+.SS C-S
+Splits the screen into two or more windows.  Pressing C-S once will split 
+the screen horizontally.  Pressing it a second time will split the screen 
+into four panes - one in each quadrant.  Pressing it a third time will 
+split the window vertically.  Pressing it a fourth time will return the 
+screen to a single window.  
+.SS C-W
+Cycle to the next window on the screen.  
+.SS C-V
+Cycle to the next view of the current file.  
+.SS C-Z
+Zoom to the current window by closing all the other windows.  
+.SS C-SPACE
+Execute the command line.  
+.SS F8
+Cycle the current window to the next file in the ring.  
+.SS S-LEFT
+Move the vertical window splitter left by 2%.  
+.SS S-RIGHT
+Move the vertical window splitter right by 2%.  
+.SS S-UP
+Move the horizontal window splitter up by 2%.  
+.SS S-DOWN
+Move the horizontal window splitter down by 2%.  
+.SS A-F1
+Edit the margins settings on the command line.  
+.SS A-F5
+Edit the current tabs on the command line.
+.SS A-F7
+Edit the tabexpand setting on the command line.
+.SS A-F8
+Edit the blankcompress setting on the command line.
+.SS A-F9
+Edit the searchcase setting on the command line.
+.SS A-F10
+Display the current character on the command line.
+
+.SH KEY NAMES
+
+
+.SH COMMANDS
+All of the following commands can be used either from the command line or 
+within a profile file.  
+.RS
+.SH ? CHAR
+.SS Usage
+? CHAR
+.SS Description
+Displays the character code for the character under the cursor.
+.SH ? BLANKCOMPRESS
+.SS Usage
+? BLANKCOMPRESS
+.SS Description
+Indicates whether blank compression during save is enabled.  The default 
+is ON.  
+.SS See also
+\fISET BLANKCOMPRESS\fP
+.SH ? HSPLIT
+.SS Usage
+? HSPLIT
+.SS Description
+Displays the position of the horizontal splitter used in multi-window 
+operation, as a percentage between 1 and 100.  The default is 50.  
+.SS See also
+\fISET HSPLIT\fP
+.SH ? KEY
+.SS Usage
+? KEY <keyname> 
+.SS Description
+Displays the definition of the specified key.  
+.SH ? MARGINS
+.SS Usage
+? MARGINS
+.SS Description
+Displays the left, right, and paragraph margins.  The default is 1 256 1.  
+.SS See also
+\fISET MARGINS\fP
+.SH ? ONCOMMAND
+.SS Usage
+? ONCOMMAND
+.Description
+Displays the value of the setting that controls whether poe opens a new 
+file with the cursor on the command line.  
+.SS See also
+\fISET ONCOMMAND\fP
+.SH ? SEARCHCASE
+.SS Usage
+? SEARCHCASE
+.SS Description
+Displays the setting for case-sensitivity in the locate and change commands.  
+.SS See also
+\fISET SEARCHCASE\fP, \fILOCATE\fP, \fICHANGE\fP
+.SH ? TABEXPAND
+.SS Usage
+? TABEXPAND
+.SS Description
+Indicates whether tab expansion during load is enabled.  The default is ON.  
+.SS See also
+\fISET TABEXPAND\fP, \fIEDIT\fP
+.SH ? TABEXPAND SIZE
+.SS Usage
+? TABEXPAND SIZE
+.SS Description
+Displays the number of spaces used for compressing/decompressing tabs.  
+The default is 8.  
+.SS See also
+\fISET TABEXPAND SIZE\fP, \fIEDIT\fP, \fISAVE\fP, \fIFILE\fP
+.SH ? TABS
+.SS Usage
+? TABS
+.SS Description
+Displays the tab stops.  The default is 1 6 11 16 ...  
+.SS See also
+\fISET TABS\fP, \fITAB\fP, \fIBACKTAB\fP
+.SH ? VSPLIT
+.SS Usage
+? VSPLIT
+.SS Description
+Displays the position of the vertical splitter used in multi- window 
+operation.  The number is a percentage between 1 and 100.  
+.SS See also
+\fISET VSPLIT\fP, \fIMOVE SPLIT LEFT\fP, \fIMOVE SPLIT RIGHT\fP
+.SH ? WRAP
+.SS Usage
+? WRAP
+.SS Description
+Displays whether automatic word wrapping is enabled.  The default is ON.  
+.SS See also
+\fISET WRAP\fP
+.SH BACKTAB 
+.SS Usage
+BACKTAB
+.SS Description
+Moves the cursor to the preceeding tab stop, or column 1 if there are no 
+preceeding tab stops.  
+.SS See also
+\fISET TABS\fP, \fITAB\fP
+.SH BACKTAB PARAGRAPH
+.SS Usage
+BACKTAB PARAGRAPH
+.SS Description
+Moves the cursor to the first line of the preceeding paragraph.  
+.PP
+When using POE for word processing, each paragraph should be separated by 
+blank lines or a roff command (which starts with '.'), html tag (which 
+starts with '<'), or Postscript command (which starts with '/').  The 
+default key definition for reformatting paragraphs uses this command to 
+find the boundaries of the paragraph to reformat.  
+.SS See also
+\fIBEGIN PARAGRAPH\fP, \fITAB PARAGRAPH\fP, \fIBACKTAB PARAGRAPH\fP
+.SH BACKTAB WORD
+.SS Usage
+BACKTAB WORD
+.SS Description
+Moves the cursor to the first character of the preceeding word, moving to 
+an earlier line if necessary.  A word in this context is a group of 
+characters separated by blanks.  
+.SS See also
+\fITAB WORD\fP
+.SH BEGIN LINE
+.SS Usage
+BEGIN LINE
+.SS Description
+Moves the cursor to the first column in the current line.  If the cursor 
+is already in the first column, then BEGIN LINE does nothing.  
+.SS See also
+\fIEND LINE\fP
+.SH BEGIN MARK
+.SS Usage
+BEGIN MARK
+.SS Description
+Moves the cursor to the beginning of the marked area.
+.PP
+For Block and Character marks, the BEGIN MARK command moves the cursor to 
+the top line of the marked area, and to the leftmost marked column of that 
+line.  For Line marks, the BEGIN MARK command moves the cursor to the top 
+line without changing its column.  
+.PP
+The mark does not have to be in the file you are currently viewing.  If it 
+is in a different file, then that file will be made current and the cursor 
+moved to the appropriate location.  
+.PP
+One use for BEGIN MARK or END MARK is as a quick bookmark.  Place a mark 
+in a file, then whenever you want to come back then press the key that 
+\fIBEGIN MARK\fP is assigned to, to jump back to that file and location.  
+.SS See also
+\fIEND MARK\fP
+.SH BEGIN PARAGRAPH
+.SS Usage
+BEGIN PARAGRAPH
+.SS Description
+Searches for the start of the current paragraph, or the next paragraph if 
+the cursor is currently between paragraphs.  
+.PP
+When using POE for word processing, each paragraph should be separated by 
+blank lines or a roff command (which starts with '.'), html tag (which 
+starts with '<'), or Postscript command (which starts with '/').  The 
+default key definition for reformatting paragraphs uses this command to 
+find the boundaries of the paragraph to reformat.  
+.SS See also
+\fIEND PARAGRAPH\fP, \fITAB PARAGRAPH\fP, \fIBACKTAB PARAGRAPH\fP
+.SH BEGIN WORD
+.SS Usage
+BEGIN WORD
+.SS Description
+Moves the cursor to the beginning of the current word.  If the cursor is 
+between words, then the cursor will be moved to the beginning of the next 
+word.  
+.SS See also
+\fIEND WORD\fP
+.SH BOTTOM
+.SS Usage
+BOTTOM
+.SS Description
+Moves the cursor to the last line of the current file.  The cursor column 
+position is not affected.  
+.SS See also
+\fITOP\fP
+.SH BOTTOM EDGE
+.SS Usage
+BOTTOM EDGE
+.SS Description
+Moves the cursor to the last row of the current text area.
+.SS See also
+\fILEFT EDGE\fP, \fIRIGHT EDGE\fP, \fITOP EDGE\fP
+.SH CENTER IN MARGINS
+.SS Usage
+CENTER IN MARGINS
+.SS Description
+Using the marked area (which must be a line mark), centers each line 
+between the margins.  If the line is longer than the inter-margin space, 
+then the line will be positioned at the left margin.  
+.SS See also
+\fISET MARGINS\fP
+.SH CENTER LINE
+.SS Usage
+CENTER LINE
+.SS Description
+Adjusts the display so the line with the cursor is in the middle of the 
+screen.  
+.SH CHANGE
+.SS Usage
+.IP \& 0.0i
+CHANGE /pattern/replacement/[-e*mn]
+.IP
+C /pattern/replacement/[-e*mn]
+.SS Description       
+The CHANGE command replaces a character or string of characters with 
+another string.  You can replace only one or multiple occurrences, and can 
+restrict the replacement to only the marked region.  For brevity it can be 
+abbreviated as simply C, and the space between the C and the delimiter can 
+be omitted.  
+.PP
+The delimiter character '/' can be any symbol.  The command 
+.RS
+c/foo/bar/
+.RE          
+is equivalent to 
+.RS
+c~foo~bar~
+.RE
+.PP
+Case sensitivity is controlled by a variety of factors.  The SET 
+SEARCHCASE option determines the default mode.  This can be overridden 
+with the 'e' option which forces case sensitivity.  
+.PP
+The replacement text is always used with its exact case.  
+.SS Options
+.IP \-
+Search backwards.
+.IP e
+Exact search (case sensitive)
+.IP *
+Replace multiple occurrences.
+.IP m
+Replace only marked occurrences.
+.IP n
+Replace only unmarked occurrences.
+.IP o
+Search from the end of the file (top or bottom).
+.SS See also
+\fILOCATE\fP, \fISET SEARCHCASE\fP
+.SH CHAR
+.SS Usage
+CHAR <c>
+.SS Description
+Inserts the character at the current position, or overwrites the character 
+if the POE is in overstrike mode.  
+.SH CLEAR MARKS
+.SS Usage
+CLEAR MARKS
+.SS Description
+Removes all marks from the mark stack.
+.SS See also
+\fIPOP MARK\fP, \fIPUSH MARK\fP
+.SH COLUMN
+.SS Usage
+COLUMN <n>
+.SS Description
+Moves the cursor to column <n>.  The cursor line is not affected.
+.SH COMMAND TOGGLE
+.SS Usage
+COMMAND TOGGLE
+.SS Description
+If the cursor is in the text area, it moves to the command area.  If it 
+was in the command area, it will be moved to the text area.  
+.SS See also
+\fICURSOR DATA\fP, \fICURSOR COMMAND\fP     
+.SH CONFIRM CHANGE
+.SS Usage
+CONFIRM CHANGE
+.SS Description
+Confirms any pending operation that requires user confirmation, such as 
+CHANGE and QUIT.  In any other situation, this command does nothing.  
+.SS See also
+\fICHANGE\fP, \fISAVE\fP, \fIFILE\fP
+.SH COPY FROM COMMAND
+.SS Usage
+COPY FROM COMMAND
+.SS Description
+Copies the command line and inserts it as a new line below the current line.  
+.SH COPY MARK
+.SS Usage
+COPY MARK
+.SS Description
+Copies the marked area to the cursor's location, leaving the original 
+marked area intact.  
+.PP
+For Line marks, the copy will be inserted below the cursor line.
+.PP
+For Character marks, the copy will be inserted at the cursor location; the 
+text to the right of the cursor location will be shifted down and right as 
+needed.  
+.PP
+For Block marks, the copy will be inserted starting at the cursor line and 
+column.  The text on each line will be shifted right to accommodate the 
+new text.  
+.SS See also
+\fIMOVE MARK\fP, \fIOVERLAY BLOCK\fP, \fIDELETE MARK\fP
+.SH COPY TO COMMAND
+.SS Usage
+COPY TO COMMAND
+.SS Description
+Copies the current text line to the command line. 
+.SS See also
+\fIEXECUTE\fP
+.SH CURSOR COMMAND
+.SS Usage
+CURSOR COMMAND
+.SS Description
+Moves the cursor to the command line.
+.SS See also
+\fICOMMAND TOGGLE\fP, \fICURSOR DATA\fP
+.SH CURSOR DATA
+.SS Usage
+CURSOR DATA
+.SS Description
+Moves the cursor to the text area.
+.SS See also
+\fICOMMAND TOGGLE\fP, \fICURSOR COMMAND\fP
+.SH DEFINE
+.SS Usage
+.IP \& 0.0i
+DEFINE <key> = [ <command> ]...
+.IP DEF <key> = [ <command> ]...
+.SS Description
+Defines a command sequence for a key.  The equals sign is required.  The 
+key name can be any valid key name, such as A (for the letter 'a'), S-A 
+(upper case version of the letter 'a'), S-UP, C-PGUP, etc.  The definition 
+may only span one line, though the line-continuation character '\' can be 
+used in profile files.  All keys in POE are defined in this manner, even 
+the standard keys like the letter and number keys.  
+.PP
+The case of the key name and commands is not significant.  
+.PP
+The valid commands are the commands listed in this document.  They are 
+delimited with '[' and ']' characters.  
+.PP
+You may use single quotes (') around literal characters.  You may use 
+double quotes (") around strings.  
+.PP
+You can remove the definition for a key by defining it to no commands, e.g.  
+.RS
+def f1=
+.RE
+.SH DELETE CHAR
+.SS Usage
+DELETE CHAR
+.SS Description
+Deletes the character under the cursor and shifts the remaining characters 
+one position left.  This is similar to the RUBOUT command.  
+.SH DELETE CHAR JOIN
+.SS Usage
+DELETE CHAR JOIN
+.SS Description
+Deletes the character under the cursor and shifts the remaining characters 
+one position left.  If the cursor is at the end of the line, then it joins 
+the current line and the next line before performing the delete.  If it is 
+on the last line of the file and beyond the end of the line, then this 
+command does nothing.  
+.SS See also
+\FiDELETE CHAR\fP
+.SH DELETE LINE
+.SS Usage
+DELETE LINE
+.SS Description
+Deletes the line the cursor is on and shifts the rest of the text up one 
+line.  The cursor does not move.  
+.PP
+If there is only one line in the file, then that line is erased but not 
+deleted.  
+.SH DELETE MARK
+.SS Usage
+DELETE MARK
+.SS Description
+Deletes the text within the marked area and removes the mark.
+.PP
+For Line marks, each marked line is deleted and the remaining lines moved 
+up.  
+.PP
+For Character marks, lines marked in their entirety are erased.  The 
+marked text at the end of the first marked line and the beginning of the 
+last marked line are erased, and first and last lines are joined together.  
+.PP
+For Block marks, the marked area on each line is deleted, shifting the 
+text to the right of the block over to the leftmost marked column.  
+.SS See also
+\fICOPY MARK\fP, \fIOVERLAY BLOCK\fP, \fIMOVE MARK\fP
+.SH DOWN 
+.SS Usage
+DOWN [<n>]
+.SS Description
+Moves the cursor n rows towards the bottom of the file.  If the cursor is 
+on the last line then this command does nothing.  The default value for 
+<n> is 1.  
+.SS See also
+\fIUP\fP, \fILEFT\fP, \fIRIGHT\fP, \fILEFT WRAP\fP, \fIRIGHT WRAP\fP
+.SH EDIT
+.SS Usage:
+.IP \& 0.0i
+EDIT [<filename> [tabs|notabs]]
+.IP
+E [<filename> [tabs|notabs]]
+.PP
+Edits a file.  If no filename is given, the editor cycles to the next file 
+in the edit ring.  
+.PP
+If the file is already loaded in the editor, the editor switches to that 
+file.  
+.PP
+If the file has not been loaded, then it is loaded into memory, the tabs 
+are expanded, and the editor switches its view to that file.  
+.PP
+The tabs option disables tab expansion, the notabs option forces tab 
+expansion, independent of the value of the SET TABEXPAND option.  
+.SH END LINE
+.SS Usage
+END LINE
+.SS Description
+Moves the cursor to the position after the last character on the current 
+line.  
+.PP
+If the cursor is already at the end of the line, this command does 
+nothing.  If it is beyond the last character on the line, the cursor is 
+moved backwards to the position after the last character.  If the line is 
+blank, the cursor is moved to the start of the line.  
+.SS See also
+\fIBEGIN LINE\fP
+.SH END MARK
+.SS Usage
+END MARK
+.SS Description
+Moves the cursor to the end of the marked area.  For Line marks, the 
+cursor moves to the last line of the marked area, but the column position 
+does not change.  For Block and Character marks, the cursor moves to the 
+exact character in the lower right corner of the marked area.  
+.SS See also
+\fIBEGIN MARK\fP
+.SH END PARAGRAPH
+.SS Usage
+END PARAGRAPH
+.SS Description
+Searches for the end of the current paragraph, or end of the previous 
+paragraph if the cursor is currently between paragraphs.  
+.PP
+When using POE for word processing, each paragraph should be separated by 
+blank lines or a roff command (which starts with '.'), html tag (which 
+starts with '<'), or Postscript command (which starts with '/').  The 
+default key definition for reformatting paragraphs uses this command to 
+find the boundaries of the paragraph to reformat.  
+.SS See also
+\fIBEGIN PARAGRAPH\fP, \fITAB PARAGRAPH\fP, \fIBACKTAB PARAGRAPH\fP
+.SH END WORD
+.SS Usage
+END WORD
+.SS Description
+Moves the cursor to the end of the current word.  If the cursor is between 
+words, the cursor is moved to the end of the preceeding word, which may be 
+on another line.  
+.SS See also
+\fIBEGIN WORD\fP
+.SH ERASE BEGIN LINE 
+.SS Usage
+ERASE BEGIN LINE
+.SS Description
+Erases the characters from the cursor to the start of the current line, 
+shifting the remaining characters to the left.  The cursor position does 
+not change.  
+.SS See also
+\fIERASE END LINE\fP
+.SH ERASE COMMAND LINE
+.SS Usage
+ERASE COMMAND LINE
+.SS Description
+Erases the command line.  The cursor does not move.
+.SH ERASE END LINE
+.SS Usage
+ERASE END LINE
+.SS Description
+Erases characters from the cursor to the end of the current line.  The 
+cursor does not move.  
+.SS See also
+\fIERASE BEGIN LINE\fP
+.SH ESCAPE
+.SS Usage
+ESCAPE [<n>]
+.SS Description
+Inserts (or overstrikes) the character with the specified ASCII code.  If 
+no code is specified, the user can enter a 3-digit decimal number from the 
+keyboard to specify the code interactively.  
+.SH EXECUTE
+.SS Usage
+EXECUTE
+.SH Description
+Performs the command currently on the command line, even if the cursor is 
+not on the command line.  This is useful for executing 
+dynamically-generated commands, or for re-executing CHANGE and LOCATE 
+commands, which do not clear the command line after they have run.  Bind a 
+key to EXECUTE (C-SPACE by default) and you can easily re-run the most 
+recent CHANGE or LOCATE.  
+.SH FILE
+.SS Usage
+FILE [<filename> [tabs|notabs]]
+.SS Description
+Writes the current file to disk and removes it from memory.  If you only 
+specify FILE with no filename or other options, the file is saved under 
+its current name and removed from memory.  If you specify a filename then 
+the file is written to that filename before being removed from memory.  
+The tabs/notabs option overrides the default tab compression setting.  
+.PP
+You cannot use the FILE command on an internal file such as ".unnamed", 
+".keys", or ".dir".  
+.SH FILL MARK
+.SS Usage
+FILL MARK [<char>]
+.SS Description
+Fills a marked area with a character.  If the character is not part of the 
+FILL MARK command, the user will be prompted to enter the character from 
+the keyboard.  
+.SS See also
+\fIMARK BLOCK\fP, \fIMARK CHAR\fP, and \fIMARK LINE\fP
+.SH FIND BLANK LINE 
+.SS Usage
+FIND BLANK LINE
+.SS Description
+Searches forward for a blank line.  If the cursor is already on a blank 
+line, the cursor does not move.  
+.SS See also
+\fIFIND PREV BLANK LINE\fP
+.SH FIND PREV BLANK LINE
+.SS Usage
+FIND PREV BLANK LINE
+.SS Description
+Searches backwards for a blank line.  If the cursor is already on a blank 
+line, the cursor does not move.  
+.SS See also
+\fIFIND BLANK LINE\fP
+.SH FIRST NONBLANK
+.SS Usage
+FIRST NONBLANK
+.SS Description
+Moves the cursor to the first character of the current line that is not a 
+blank.  If there are no nonblank characters on the line, the cursor is 
+moved to the beginning of the line.
+.SH MOVE SPLITTER UP 
+.SS Usage
+MOVE SPLITTER UP <n>
+.SS Description
+Shifts the horizontal splitter up by <n> percent.
+.SS See also
+\fIMOVE SPLITTER DOWN\fP
+.SH MOVE SPLITTER DOWN 
+.SS Usage
+MOVE SPLITTER DOWN <n>
+.SS Description
+Adjusts the position of the horizontal splitter downwards by the specified 
+percent.  
+.SS See also
+\fIMOVE SPLITTER UP\fP
+.SH INDENT 
+.SS Usage
+INDENT
+.SS Description
+Moves the cursor to the paragraph margin if the cursor is on the first 
+line, or the preceeding line is blank.  Otherwise the cursor moves to the 
+left margin.  This is helpful when word processing if you define the Enter 
+key to the command sequence [insert line] [indent].  
+.SH INSERT LINE
+.SS Usage
+INSERT LINE
+.SS Description
+Inserts a new line below the current line, shifting the rest of the lines 
+down.  The cursor moves to the first column of the new line.  
+.PP
+To insert a line above the current line, move up then insert the line.  To 
+insert a line above line 1, move to the start of the first line, and use 
+the SPLIT command.  
+.SH INSERT MODE
+.SS Usage
+INSERT MODE
+.SS Description
+Sets the input mode to insert.  In insert mode, typing new characters 
+results in the character under the cursor being shifted over before the 
+new character is placed in the file.  The current input mode is displayed 
+on the status line to the right of the line and column numbers.  
+.SS See also
+\fIINSERT TOGGLE\fP, \fIREPLACE MODE\fP
+.SH INSERT TOGGLE
+.SS Usage
+INSERT TOGGLE
+.SS Description
+Switches the input mode between insert and replace.
+.SS See also
+\fIINSERT MODE\fP, \fIREPLACE MODE\fP
+.SH JOIN
+.SS Usage
+JOIN
+.SS Description
+Concatenates the current line and the next one, and deletes the next line. 
+The cursor may be anywhere on the current line, and does not move after 
+connecting the two.  This command does nothing if the current line is the 
+last line in the file.  
+.SS See also
+\fISPLIT\fP
+.SH LEFT 
+.SS Usage
+LEFT [<n>]
+.SS Description
+Moves the cursor <n> positions left.  The default value for <n> is 1.  
+When the cursor hits column 1 the LEFT command does nothing.  
+.SH LEFT EDGE
+.SS Usage
+LEFT EDGE
+.SS Description
+Moves the cursor to the left edge of the text area. 
+.SS See also
+\fIRIGHT\fP
+.SH LEFT WRAP
+.SS Usage
+LEFT WRAP [<n>]
+.SS Description
+Moves the cursor <n> positions left, wrapping around to the previous line 
+if necessary.  
+.SS See also
+\fILEFT\fP
+.SH LINE
+.SS Usage
+LINE <linenum> [<colnum>]
+.SS Description
+Moves the cursor to the specified line (and column, if provided).
+.SH LOCATE
+.SS Usage
+.IP \& 0.0i
+LOCATE /pattern/[-seo]
+.IP
+L /pattern/[-seo]
+.IP
+/pattern/[-seo]
+.IP
+/pattern
+.SS Description       
+The LOCATE command searches for a string of characters.  For brevity it 
+can be abbreviated as simply L, and the space between the L and the 
+delimiter can be omitted.  If the delimiter '/' is used, the command name 
+can be omitted completely.  
+.PP
+The delimiter character '/' can be any symbol.  The commands 
+.RS
+/foo/
+l!foo!
+locate ~foo~
+.RE
+are all equivalent.  
+.SS Options
+.IP -
+Search backwards.
+.IP s
+Select the found text with a character mark.
+.IO e
+Exact search (case sensitive)
+.IP o
+Search from the end of the file (top or bottom).
+.PP
+Case sensitivity is controlled by a variety of factors.  The SET 
+SEARCHCASE option determines the default mode.  This can be overridden 
+with the 'e' option which forces case sensitivity.  Usage:  locate 
+/pattern/replacement/[-e*mn] 
+.SH LOWERCASE
+.SS Usage
+LOWERCASE
+.SS Description
+Makes all upper case letters within the marked area into their lower case 
+equivalents.  All other characters are left untouched.  If there is no 
+marked area then you will get an error indicating "No marked area".  
+.SS See also
+\fIUPPERCASE\fP
+.SH MARK BLOCK
+.SS Usage
+MARK BLOCK
+.SS Description
+If there is no current mark, then it begins a block mark.  If there is 
+already a block mark, then that mark is extended from the original mark 
+point to the cursor position.  If the current mark is not a block mark, or 
+if it is in another file buffer, then you will get an error indicating the 
+situation.  The existing mark can be removed with UNMARK, which is bound 
+to the A-U key by default.  
+.SS See also
+\fICLEAR MARKS\fP, \fIMARK CHAR\fP, \fIMARK LINE\fP, \fIUNMARK\fP, \fIPUSH 
+MARK\fP, \fIPOP MARK\fP 
+.SH MARK CHAR
+.SS Usage
+MARK CHAR
+.SS Description
+If there is no current mark, then it begins a character mark.  If there is 
+already a block mark, then that mark is extended from the original mark 
+point to the cursor position.  If there is an existing mark, but it is not 
+a character mark or it is in a different buffer, then an error message 
+will indicate what has happened.  The pre-existing mark can be removed 
+with UNMARK, which is bound to the A-U key by default.  
+.SS See also
+\fICLEAR MARKS\fP, \fIMARK BLOCK\fP, \fIMARK LINE\fP, \fIUNMARK\fP, 
+\fIPUSH MARK\fP, \fIPOP MARK\fP 
+.SH MARK LINE
+.SS Usage
+MARK LINE
+.SS Description
+If there is no current marked area, then this command begins a line mark.  
+If there is already a line mark in the buffer, then that mark is extended 
+from the original mrak point to the cursor position.  If there is an 
+existing mark, but it is not a line mark or it is in a different buffer, 
+then an error message will indicate the problem.  The incompatible mark 
+can be removed with UNMARK, which is bound to the A-U key by default.  
+.SS See also
+\fICLEAR MARKS\fP, \fIMARK BLOCK\fP, \fIMARK CHAR\fP, \fIUNMARK\fP, 
+\fIPUSH MARK\fP, \fIPOP MARK\fP 
+.SH MOVE MARK
+.SS Usage
+MOVE MARK
+.SS Description
+Inserts the contents of the marked area at the cursor position, then 
+deletes the marked area.  
+.PP
+For Line marks, the copy will be inserted below the cursor line.
+.PP
+For Character marks, the copy will be inserted at the cursor location; the 
+text to the right of the cursor location will be shifted down and right as 
+needed.  
+.PP
+For Block marks, the copy will be inserted starting at the cursor line and 
+column.  The text on each line will be shifted right to accommodate the 
+new text.  
+.SS See also
+\fICOPY MARK\fP, \fIOVERLAY BLOCK\fP, \fIDELETE MARK\fP
+.SH MOVE SPLITTER DOWN 
+.SS Usage
+MOVE SPLITTER DOWN <n>
+.SS Description
+Adjusts the position of the horizontal splitter downwards by the specified 
+percent.  
+.SS See also
+\fIMOVE SPLITTER LEFT\fP, \fIMOVE SPLITTER RIGHT\fP, \fIMOVE SPLITTER UP\fP
+.SH MOVE SPLITTER LEFT 
+.SS Usage
+MOVE SPLITTER LEFT <n>
+.SS Description
+Shifts the vertical splitter left by <n> percent.
+.SS See also
+\fIMOVE SPLITTER DOWN\fP, \fIMOVE SPLITTER RIGHT\fP, \fIMOVE SPLITTER UP\fP
+.SH MOVE SPLITTER RIGHT 
+.SS Usage
+MOVE SPLITTER RIGHT <n>
+.SS Description
+Adjusts the position of the vertical splitter rightwards by the specified 
+percent.  
+.SS See also
+\fIMOVE SPLITTER DOWN\fP, \fIMOVE SPLITTER LEFT\fP, \fIMOVE SPLITTER UP\fP
+.SH MOVE SPLITTER UP 
+.SS Usage
+MOVE SPLITTER UP <n>
+.SS Description
+Shifts the horizontal splitter up by <n> percent.
+.SS See also
+\fIMOVE SPLITTER DOWN\fP, \fIMOVE SPLITTER LEFT\fP, \fIMOVE SPLITTER RIGHT\fP
+.SH NAME
+.SS Usage
+NAME <filename>
+.SS Description
+Changes the name of the current file.  This will become the default name 
+for the SAVE or FILE commands.  
+.SS See also
+\fISAVE\fP, \fIFILE\fP
+.SH NEXT FILE
+.SS Usage
+NEXT FILE
+.SS Description
+Switches to the next file in the edit ring.  This is equivalent to EDIT 
+with no filename specified.  
+.SS See also
+\fINEXT VIEW\fP, \fINEXT WINDOW\fP
+.SH NEXT VIEW
+.SS Usage
+NEXT VIEW
+.SS Description
+If Poe has multiple windows open, then this command switches to the next 
+window viewing the current file.  If there are no other windows that are 
+viewing the current file, then this command does nothing.  
+.SS See also
+\fINEXT FILE\fP, \fINEXT WINDOW\fP, \fISPLIT WINDOW\fP, \fIZOOM WINDOW\fP
+.SH NEXT WINDOW
+.SS Usage
+NEXT WINDOW
+.SS Description
+If Poe has multiple windows open, then this command switches to the next 
+window on the screen.  If there are no windows open, then this command 
+does nothing.  
+.SS See also
+\fINEXT FILE\fP, \fINEXT VIEW\fP, \fISPLIT WINDOW\fP, \fIZOOM WINDOW\fP
+.SH OVERLAY BLOCK
+.SS Usage
+OVERLAY BLOCK
+.SS Description
+Places a marked area on top of existing text.  This can only be used with 
+block marks.  The contents of the marked area are placed on top of an area 
+the same size, with the cursor indicating the top left corner of the 
+region to be overlayed.  
+.SS See also
+\fICOPY MARK\fP, \fIDELETE MARK\fP, \fIMOVE MARK\fP
+.SH PAGE DOWN
+.SS Usage
+PAGE DOWN
+.SS Description
+Scrolls the display down one page, by moving the cursor down the number of 
+lines being displayed, and adjusting the viewport to match.  The cursor 
+will not move beyond the top of the file.  
+.SS See also
+\fIPAGE UP\fP
+.SH PAGE UP
+.SS Usage
+PAGE UP
+.SS Description
+Scrolls the display up one page, by moving the cursor up the number of 
+lines being displayed, and adjusting the viewport to match.  The cursor 
+will not move beyond the top of the file.  
+.SS POP MARK
+.SS Usage
+POP MARK
+.SS Description
+Restore the current mark from the mark stack.  This primarily intended for 
+use in key macros.  
+.SS See also
+\fICLEAR MARKS\fP, \fIPUSH MARK\fP
+.SH PUSH MARK
+.SS Usage
+PUSH MARK
+.SS Description
+Push the current mark (if any) to the mark stack, and reset the current 
+mark status to unmarked.  If there was no existing mark, then this 
+information is pushed onto the mark stack instead.  
+.SS See also
+\fICLEAR MARKS\fP, \fIPOP MARK\fP
+.SH QQUIT 
+.SS Usage
+QQUIT
+.SS Description
+Quit Poe without saving any files.
+.SS See also
+\fIQUIT\fP
+.SH QUIT
+.SS Usage
+QUIT
+.SS Description
+Stop editing the current file and remove it from memory.  If the file has 
+been modified or renamed then the user will be prompted for confirmation.  
+The default profile has the confirm change command bound to 'y' and S-F5.  
+.SS See also
+\fICONFIRM CHANGE\fP, \fISAVE\fP, \fIFILE\fP, \fINAME\fP
+.SH REDRAW
+.SS Usage
+REDRAW
+.SS Description
+Erases the screen, then completely redraws it.  This is primarily useful 
+if the screen contents contents have become garbled due to terminal 
+messages or line noise.  
+.SH REFLOW
+.SS Usage
+REFLOW
+.SS Description
+Reformats the marked area to the currently set margins.  This command is 
+only supported for line marks.  
+.PP
+For the first line of the marked area, Poe uses the paragraph margin as 
+the left margin.  It then fills lines with words without splitting them at 
+the end of the line, using one space between words, and two spaces after 
+periods and colons.  If a single word is too long to fit between the 
+margins, Poe aligns it at the left margin and allows it to spill over the 
+right margin.  The default profile for Poe includes a command sequence for 
+the A-P key that finds the end of the current paragraph with FIND BLANK 
+LINE, then marks the paragraph and reflows it before moving to the next 
+paragraph.  
+.PP
+Poe does not contain commands for right justification or fill justification.  
+.SS See also
+\fIBEGIN PARAGRAPH\fP, \fIEND PARAGRAPH\fP, \fIFIND PREV BLANK LINE\fP, 
+\fICENTER IN MARGINS\fP, \fISET MARGINS\fP 
+.SH RESIZE DISPLAY
+.SS Usage
+RESIZE DISPLAY
+.SS Description
+Adjusts the display for the current operating system window size.  For Poe 
+running under Unix or Linux, this command is bound to the RESIZE 
+pseudo-keystroke that is generated by the ncurses library.  The default 
+profile also uses this on the C-L key to force Poe to adjust its size to 
+match the terminal.  
+.SH REPLACE MODE
+.SS Usage
+REPLACE MODE
+.SS Description
+Sets the input mode to replace.  In replace mode, typing new characters 
+results in the character under the cursor being replaced with the new 
+character, and the cursor is then moved to the right.  The current input 
+mode is displayed on the status line to the right of the line and column 
+numbers.
+.SS See also
+\fIINSERT MODE\fP
+.SH RIGHT 
+.SS Usage
+RIGHT [<n>]
+.SS Description
+Moves the cursor <n> positions to the right.  If <n> is omitted the 
+default value is 1.  The screen will be scrolled horizontally as needed to 
+keep the cursor visible.  
+.SS See also
+\fILEFT\fP, \fIRIGHT WRAP\fP
+.SH RIGHT EDGE
+.SS Usage
+RIGHT EDGE
+.SS Description
+Moves the cursor to the right edge of the text area.
+.SS See also
+\fILEFT EDGE\fP
+.SH RIGHT WRAP
+.SS Usage
+RIGHT WRAP [<n>]
+.SS Description
+Moves the cursor right <n> positions.  If the cursor moves past the end of 
+the line, then the cursor will be moved to the beginning of the next line.  
+.SS See also
+\fIRIGHT\fP, \fILEFT WRAP\fP
+.SH RUBOUT JOIN
+.SS Usage
+RUBOUT JOIN
+.SS Description
+Deletes the character to the left of the cursor and shifts the remaining 
+characters on the current line one position to the left to close up the 
+gap.  If the cursor is in the first column, it moves to the end of the 
+previous line and joins the two lines together.  
+.SH RUBOUT 
+.SS Usage
+RUBOUT
+.SS Description
+Deletes the character to the left of the cursor and shifts the remaining 
+characters on the current line one position to the left to close up the 
+gap.  If the cursor is in the first column, it deletes the character under 
+the cursor.  
+.SH SAVE
+.SS Usage
+SAVE [[<filename>] [tabs|notabs]]
+.SS Description
+Writes a copy of the current file to disk.  If no filename is specified, 
+then the file is saved under its current name.  If a filename is specified 
+then it is saved under the current directory using the new name.  The tabs 
+or notabs options can be used to override the default blankcompress setting.  
+.SS See also
+\fIFILE\fP, \fIEDIT\fP, \fINAME\fP
+.SH SET BLANKCOMPRESS
+.SS Usage
+SET BLANKCOMPRESS ON|OFF
+.SS Description
+Sets the default blank compression setting to be used when writing a file 
+to disk with either SAVE or FILE.  
+.SS See also
+\fISET TABEXPAND\fP, \fISET TABEXPAND SIZE\fP
+.SH SET HSPLIT
+.SS Usage
+SET HSPLIT <n>
+.SS Description
+Sets the position of the horizontal splitter when editing multiple files 
+in split-screen mode.  The number is a percentage between 1 and 100.  
+.SS See also
+\fI? HSPLIT\fP, \fISET VSPLIT\fP
+.SH SET MARGINS
+.SS Usage
+SET MARGINS <leftmargin> <rightmargin> [<paragraphmargin>]
+.SS Description
+Sets the three margins used in word wrap and reflow.  If the paragraph 
+margin is omitted then it is set to the left margin.  
+.SS See also
+\fI? MARGINS\fP, \fIREFLOW\fP
+.SH SET ONCOMMAND
+.SS Usage
+SET ONCOMMAND ON|OFF
+.SS Description
+ON means that the cursor will start in the command line
+.PP
+OFF means that the cursor will start in the text area.
+.SH SET SEARCHCASE
+.SS Usage
+SET SEARCHCASE ANY|EXACT|SMART
+.SH Description
+ANY means that searches are case-insensitive by default.  
+.PP
+EXACT means that searches are case-sensitive by default.  
+.PP
+If the SMART option is used, then searches will be case-sensitive if there 
+are any upper-case characters in the search pattern; if there are no 
+upper-case characters in the search pattern then case-insensitive search 
+will be used.  
+.SS See also
+\fI? SEARCHCASE\fP, \fICHANGE\fP, \fILOCATE\fP
+.SH SET TABEXPAND
+.SS Usage
+SET TABEXPAND ON|OFF
+.SS Description
+Sets the default tab expansion setting used when loading a new file.
+.SS See also
+\fI? TABEXPAND\fP, \fIEDIT\fP, \fISET TABEXPAND SIZE\fP
+.SH SET TABEXPAND SIZE
+.SS Usage
+SET TABEXPAND SIZE <n>
+.SS Description
+Sets the size of a tab character used when expanding tabs to spaces during 
+file load.  
+.SS See also
+\fI? TABEXPAND SIZE\fP, \fIEDIT\fP
+.SH SET TABS
+.SS Usage
+.IP \& 0.0i
+SET TABS <n>
+.IP
+SET TABS <n1> <n2>
+.IP
+SET TABS <n1> <n2> <n3> ...
+.SS Description
+Sets the tab stops used by the TAB and BACKTAB commands.
+.PP
+If only one number is given, then the tab stops are set at every <n> 
+columns, e.g.
+.RS
+SET TABS 5
+.RE
+will set tabstops at column 6, 11, 16 etc.  
+.PP
+If two numbers are given, then the tab stops will start at column <n1> and 
+<n2>, and will continue that spacing afterward, e.g.  "SET TABS 2 4" will 
+set tabstops at column 2, 4, 6, etc.  
+.PP
+If more than two numbers are given, then they are used as the tab stop 
+columns.  The spacing between the last two columns will determine the 
+spacing for tabs after the last given column, e.g.
+.RS
+SET TABS 6 11 16 20 
+.RE
+will set tabs at 6, 11, 16, 20, 24, 28, etc.  
+.SH SET VSPLIT
+.SS Usage
+SET VSPLIT <n>
+.SS Description
+Sets the position of the vertical splitter.  The number is interpreted as 
+a percentage between 1 and 100.  
+.SS See also
+\fI? VSPLIT\fP, \fISET HSPLIT\fP
+.SH SET WRAP
+.SS Usage
+SET WRAP ON|OFF
+.SS
+Enables or disables automatic word-wrapping.  The default is ON, but the 
+default margins are 1 256 1, so it is extremely unlikely that word 
+wrapping will be accidentally triggered.  
+.SH SHIFT LEFT
+.SS Usage
+SHIFT LEFT [<n>]
+.SS Description
+Shifts the marked region left <n> spaces.  The characters on the leftmost 
+edge of the marked region are deleted.  
+.SS See also
+\fISHIFT RIGHT\fP
+.SH SHIFT RIGHT
+.SS Usage
+SHIFT RIGHT [<n>]
+.SS Description
+Shifts the marked region right <n> spaces.  Spaces are inserted on the 
+leftmost edge of the marked region to fill in the newly created space.  
+.SS See also
+\fISHIFT LEFT\fP
+.SH STR 
+.SS Usage
+STR <string>
+.SS Description
+Insert or replaces the string at the cursor position, depending on the 
+current editing mode, then shifting the cursor right the appropriate 
+number of positions.  This is equivalent to executing the CHAR command on 
+each character of the string, but faster.  
+.SH SPLIT SCREEN
+.SS Usage
+SPLIT SCREEN
+.SS Description
+Splits the current editor screen into two or more windows allowing 
+multiple files to be viewed simultaneously.  The first time SPLIT SCREEN 
+is executed it splits the terminal screen in two with a pane on each side 
+of the window separated by a vertical splitter bar.  The second time it 
+splits the terminal screen into four panes, the third time it splits into 
+two panes stacked on top of each other separated by a horizontal splitter 
+bar.  Executing SPLIT SCREEN a fourth time returns the editor to a single 
+view window.  
+.PP
+Each split-screen editor window has its own command line, status line, and 
+message line.  
+.SS See also
+\fINEXT WINDOW\fP, \fINEXT VIEW\fP, \fIZOOM WINDOW\fP, \fISET HSPLIT\fP, 
+\fISET VSPLIT\fP 
+.SH SPLIT
+.SS Usage
+SPLIT
+.SS Description
+Splits the current line at the cursor position.  The character under the 
+cursor will be the first character of the new line inserted below the 
+current line.  The cursor position does not change.  
+.PP
+One way to insert a line above the first line of the file is to execute 
+the SPLIT command when the cursor is at the start of the first line.  
+.SS See also
+\fIJOIN\fP
+.SH TAB 
+.SS Usage
+TAB
+.SS Description
+Moves the cursor to the right to the next tab stop.
+.PP
+You may redefine the tab stops with the SET TABS command.  To see the 
+current tabstops, execute the ? TABS command.  
+.SH TAB PARAGRAPH
+.SS Usage
+TAB PARAGRAPH
+.SS Description
+Moves the cursor to the first line of the next paragraph.  
+.PP
+When using POE for word processing, each paragraph should be separated by 
+blank lines or a roff command (which starts with '.'), html tag (which 
+starts with '<'), or Postscript command (which starts with '/').  The 
+default key definition for reformatting paragraphs uses this command to 
+find the boundaries of the paragraph to reformat.  
+.SS See also
+\fIBEGIN PARAGRAPH\fP, \fIEND PARAGRAPH\fP, \fIBACKTAB PARAGRAPH\fP
+.SH TAB WORD
+.SS Usage
+TAB WORD
+.SS Description
+Moves the cursor to the right, stopping at the first character in the next 
+word.  A word is a group of nonblank characters, separated by blanks.  The 
+cursor will wrap to the next line if necessary.  
+.SH TRIM
+.SS Usage
+TRIM
+.SS Description
+Erases leading and trailing blank spaces from the current line.
+.SH TRIM LEADING
+.SS Usage
+TRIM LEADING
+.SS Description
+Erases leading blank spaces from the current line, shifting the text 
+leftward as necessary.  
+.SS See also
+\fITRIM TRAILING\fP, \fITRIM\fP
+.SH TRIM TRAILING
+.SS Usage
+TRIM TRAILING
+.SS Description
+Erases trailing blank spaces from the current line.  If the cursor is in 
+this blank space, it will be shifted left to just beyond the last nonblank 
+character on the line.  
+.SH TOP
+.SS Usage
+TOP
+.SS Description
+Moves the cursor to the first line of the file.  The column position does 
+not change.  
+.SS See also
+\fIBOTTOM\fP
+.SH TOP EDGE
+.SS Usage
+TOP EDGE
+.SS Description
+     Moves the cursor to the top line of the screen.
+.SS See also
+\fIBOTTOM EDGE\fP, \fILEFT EDGE\fP, \fIRIGHT EDGE\fP
+.SH UNMARK
+.SS Usage
+UNMARK
+.SS Description
+Removes the current mark, whether it is in this file or another file.  
+Other marks on the mark stack are not modified.  The cursor does not need 
+to be on the mark.  
+.SS See also
+\fICLEAR MARKS\fP, \fIMARK BLOCK\fP, \fIMARK CHAR\fP, \fIMARK LINE\fP
+.SH UP
+.SS Usage
+UP [<n>]
+.SS Description
+Move the cursor up <n> lines.  If <n> is not given, then the default is 1.  
+.SH UPPERCASE
+.SS Usage
+UPPERCASE
+.SS Description
+Makes all lowercase letters within the marked area into their uppercase 
+equivalents.  All other characters are left untouched.  If there is no 
+marked area then you will get an error indicating "No marked area".  
+.SS See also
+\fILOWERCASE\fP
+.SH ZOOM WINDOW
+.SS Usage
+ZOOM WINDOW
+.SS Description
+If the editor has multiple windows visible in split-screen mode, then all 
+windows except the current one are closed, and the current file window is 
+maximized to the full terminal size.  
+.SS See also
+\fISPLIT SCREEN\fP, \fINEXT WINDOW\fP     
+.RE
+.SH EXAMPLE POE.PRO FILE
+
+ set tabexpand on
+ set blankcompress off
+ set margins 1 256 1
+ set tabs 4
+ set tabexpand size 8
+ set oncommand off
+ def resize = [resize display]
+ 
+ def up = [up]
+ def down = [down]
+ def left = [left]
+ def right = [right]
+ def pgup = [page up]
+ def pgdn = [page down]
+ def home = [begin line]
+ def end = [end line]
+ def insert = [insert toggle]
+ def del = [delete char]
+ def enter = [insert line] [push mark] [mark line] [backtab word] \
+             [begin line] [begin word] [begin mark] [pop mark]
+ def cmd-enter = [execute]
+ def backspace = [rubout]
+ def esc = [command toggle]
+ def tab = [tab]
+ def a = [char 'a']
+ def b = [char 'b']
+ def c = [char 'c']
+ def d = [char 'd']
+ def e = [char 'e']
+ def f = [char 'f']
+ def g = [char 'g']
+ def h = [char 'h']
+ def i = [char 'i']
+ def j = [char 'j']
+ def k = [char 'k']
+ def l = [char 'l'] 
+ def m = [char 'm']
+ def n = [char 'n']
+ def o = [char 'o']
+ def p = [char 'p']
+ def q = [char 'q']
+ def r = [char 'r']
+ def s = [char 's']
+ def t = [char 't']
+ def u = [char 'u']
+ def v = [char 'v']
+ def w = [char 'w']
+ def x = [char 'x']
+ def y = [confirm change] [char 'y']
+ def z = [char 'z']
+ def f1 = [e "~/.poe/help.txt"]
+ def f2 = [cursor command] [begin line] [erase end line] [str "save"]
+ def f3 = [cursor command] [begin line] [erase end line] [str "file"] 
+ def f4 = [quit]
+ def f5 = [begin line] [erase end line]
+ def f6 = [erase end line]
+ def f7 = [cursor command] [begin line] [erase end line] [str "print"] 
+ def f8 = [next file]
+ def f9 = [insert line]
+ def f10 = [insert line] [push mark] [mark line] [backtab word]\
+           [begin line] [begin word] [begin mark] [pop mark]
+ def 0 = [char '0']
+ def 1 = [char '1']
+ def 2 = [char '2']
+ def 3 = [char '3']
+ def 4 = [char '4']
+ def 5 = [char '5']
+ def 6 = [char '6']
+ def 7 = [char '7']
+ def 8 = [char '8']
+ def 9 = [char '9'] 
+ def minus = [char '-']
+ def equals = [char '=']
+ def lbracket = [char '['] 
+ def rbracket = [char ']']
+ def semi = [char ';']
+ def quote = [char 39]
+ def backquote = [char '`']
+ def comma = [char ',']
+ def period = [char '.']
+ def slash = [char '/']
+ def backslash = [char '\']
+ def space = [char ' ']
+ def c-left = [backtab word]
+ def c-right = [tab word]
+ def c-up = [up 20]
+ def c-down = [down 20]
+ def c-pgdn = [bottom edge]
+ def c-pgup = [top edge]
+ def c-home = [top]
+ def c-end = [bottom]
+ def c-backspace = [delete line]
+ def c-a = [begin line]
+ def c-c = [push mark] [mark line] [center in margins] \ 
+           [unmark] [pop mark]
+ def c-e = [end line]
+ def c-f = [copy from command]
+ def c-h = [rubout]
+ def c-k = [erase end line]
+ def c-l = [resize display] [center line]
+ def c-n = [down 60]
+ def c-r = [push mark] [mark line] [copy mark] [pop mark]
+ def c-s = [split screen]
+ def c-t = [copy to command]
+ def c-u = [edit ".unnamed"]
+ def c-v = [next view]
+ def c-w = [next window]
+ def c-z = [zoom window]
+ def c-space = [execute]
+ def c-f1 = [insert line]
+ def c-f2 = [insert line 2]
+ def c-f3 = [insert line 3] 
+ def c-f4 = [insert line 4]
+ def c-f5 = [insert line 5]
+ def c-f6 = [insert line 6]
+ def c-f7 = [insert line 7]
+ def c-f8 = [insert line 8]
+ def c-f9 = [insert line 9]
+ def c-f10 = [insert line 10] 
+ 
+ def s-up = [move splitter up 2]
+ def s-down = [move splitter down 2]
+ def s-left = [move splitter left 2]
+ def s-right = [move splitter right 2]
+ def s-tab = [backtab]
+ def s-a = [char 'A']
+ def s-b = [char 'B']
+ def s-c = [char 'C']
+ def s-d = [char 'D']
+ def s-e = [char 'E']
+ def s-f = [char 'F']
+ def s-g = [char 'G']
+ def s-h = [char 'H']
+ def s-i = [char 'I']
+ def s-j = [char 'J']
+ def s-k = [char 'K']
+ def s-l = [char 'L']
+ def s-m = [char 'M']
+ def s-n = [char 'N']
+ def s-o = [char 'O']
+ def s-p = [char 'P']
+ def s-q = [char 'Q']
+ def s-r = [char 'R']
+ def s-s = [char 'S']
+ def s-t = [char 'T']
+ def s-u = [char 'U']
+ def s-v = [char 'V']
+ def s-w = [char 'W']
+ def s-x = [char 'X']
+ def s-y = [confirm change] [char 'Y']
+ def s-z = [char 'Z']
+ def s-0 = [char ')']
+ def s-1 = [char '!']
+ def s-2 = [char '@']
+ def s-3 = [char '#']
+ def s-4 = [char '$']
+ def s-5 = [char '%']
+ def s-6 = [char '^']
+ def s-7 = [char '&']
+ def s-8 = [char '*']
+ def s-9 = [char '(']
+ def s-f1 = [page down] [bottom edge] [down 2] [cursor command]
+ def s-f2 = [page up] [top edge] [up 2] [cursor command]
+ def s-f3 = [reflow]
+ def s-f6 = [erase begin line] [begin line]
+ def s-f7 = [shift left]
+ def s-f8 = [shift right]
+ #def s-f9 = [ls]
+ def s-minus = [char '_']
+ def s-equals = [char '+']
+ def s-lbracket = [char '{']
+ def s-rbracket = [char '}']
+ def s-semi = [char ':']
+ def s-quote = [char 34]
+ def s-backquote = [char '~']
+ def s-comma = [char '<']
+ def s-period = [char '>']
+ def s-slash = [char '?']
+ def s-backslash = [char '|']
+ 
+ def a-b = [mark block]
+ def a-c = [mark char]
+ def a-d = [begin mark] [delete mark]
+ def a-e = [end mark]
+ def a-f = [fill mark]
+ def a-j = [push mark] [down] [first nonblank] [mark block]\
+           [end line] [end word] [mark block] [up] [end line] [end word]\
+           [right] [right] [copy mark] [down] [unmark] [delete line]\
+           [up] [pop mark]
+ def a-l = [mark line]
+ def a-m = [move mark]
+ def a-o = [overlay block]
+ def a-p = [cursor data] [push mark] [begin paragraph] [mark line] \
+           [end paragraph] [mark line] [reflow] [tab paragraph] \
+           [pop mark]
+ def a-r = [redraw]
+ def a-s = [split]
+ def a-u = [unmark]
+ def a-w = [unmark] [tab word] [mark char] [end word] [right] \
+           [mark char] [begin mark]
+ def a-y = [begin mark]
+ def a-z = [copy mark]
+ def a-backspace = [delete line]
+ def a-f1 = [? margins] [cursor command] [end line]
+ def a-f2 = [? wrap] [cursor command] [end line]
+ def a-f5 = [? tabs] [cursor command] [end line]
+ def a-f7 = [? tabexpand] [cursor command] [end line]
+ def a-f8 = [? blankcompress] [cursor command] [end line]
+ def a-f9 = [? searchcase] [cursor command] [end line]
+ def a-f10 = [? char] [cursor command] [end line]
+ def a-down = [down 20]
+ def a-left = [left 40]
+ def a-right = [right 40]
+ def a-up = [up 20] 
+.SH AUTHOR
+K. Michael Parker (kmikep (at) live.com)

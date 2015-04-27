@@ -32,8 +32,10 @@ void shutdown_buffer(void);
 int buffers_count(void);
 int visible_buffers_count(void);
 BUFFER buffers_next(BUFFER buf);
+void buffers_switch_profiles(PROFILEPTR newprofile, PROFILEPTR oldprofile);
 
-BUFFER buffer_alloc(const char* buffer_name, int flags, int capacity);
+BUFFER buffer_alloc(const char* buffer_name, int flags, int capacity,
+					PROFILEPTR profile);
 void buffer_free(BUFFER buf);
 void buffer_must_exist(const char* dbgstr, BUFFER buf);
 bool buffer_exists(BUFFER buf);
@@ -53,6 +55,7 @@ void buffer_gettabs(BUFFER buf, tabstops* tabs);
 void buffer_settabs(BUFFER buf, tabstops* tabs);
 
 PROFILEPTR buffer_get_profile(BUFFER buf);
+void buffer_set_profile(BUFFER buf, PROFILEPTR profile);
 
 int buffer_nexttab(BUFFER buf, int col);
 int buffer_prevtab(BUFFER buf, int col);
@@ -65,6 +68,9 @@ struct line_t* buffer_get(BUFFER buf, int line);
 int buffer_scantill_nowrap(BUFFER buf, int line, int col, int direction, char_test testf);
 bool buffer_isblankline(BUFFER buf, int line);
 int buffer_findblankline(BUFFER buf, int line, int direction);
+bool buffer_isparagraphsep(BUFFER buf, int line);
+int buffer_findparagraphsep(BUFFER buf, int line, int direction);
+int buffer_findnonparagraphsep(BUFFER buf, int line, int direction);
 bool buffer_right_wrap(BUFFER buf, int* pline, int* pcol);
 bool buffer_left_wrap(BUFFER buf, int* pline, int* pcol);
 void buffer_scantill_wrap(BUFFER buf, int* pline, int* pcol, int direction, char_test testf);
@@ -106,8 +112,8 @@ POE_ERR buffer_copyoverlaylines(BUFFER dstbuf, int dstline,
 POE_ERR buffer_splitline(BUFFER buf, int row, int col, bool update_marks);
 POE_ERR buffer_joinline(BUFFER buf, int row, bool update_marks);
 
-POE_ERR buffer_load(BUFFER dst, cstr* filename, int tabexpand);
-POE_ERR buffer_save(BUFFER dst, cstr* filename, int tabcompress);
+POE_ERR buffer_load(BUFFER dst, cstr* filename, bool tabexpand);
+POE_ERR buffer_save(BUFFER dst, cstr* filename, bool blankcompress);
 
 bool buffer_wrap_line(BUFFER dst,
 					  int row, int lastrow,

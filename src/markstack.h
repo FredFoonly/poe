@@ -8,6 +8,7 @@ MARK markstack_push(void);
 POE_ERR markstack_pop(void);
 MARK markstack_current(void);
 
+void markstack_pop_marks_in_buffer(BUFFER buf);
 
 MARK markstack_hittest_point(BUFFER buf, int row, int col, int flags_mask, int flags_chk);
 MARK markstack_hittest_line(BUFFER buf, int row, int flags_mask, int flags_chk);
@@ -23,3 +24,4 @@ POE_ERR markstack_cur_unmark(void);
 POE_ERR markstack_cur_place(enum marktype typ, BUFFER buf, int line, int col);
 POE_ERR markstack_cur_start(enum marktype typ, BUFFER buf, int line, int col);
 POE_ERR markstack_cur_extend(enum marktype typ, BUFFER buf, int line, int col);
+void markstack_cur_seal(void);

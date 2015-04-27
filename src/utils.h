@@ -38,6 +38,8 @@ int poe_isendbrace(char c);
 int poe_isnotendbrace(char c);
 int poe_isquote(char c);
 int poe_isnotquote(char c);
+int poe_islocateoption(char c);
+int poe_isnotlocateoption(char c);
 
 
 #define PE_STK_ALLOC_LIMIT (10)

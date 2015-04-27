@@ -18,8 +18,10 @@
 #include "bufid.h"
 #include "mark.h"
 #include "tabstops.h"
+#include "margins.h"
 #include "key_interp.h"
 #include "buffer.h"
+#include "editor_globals.h"
 
 #include "testing.h"
 
@@ -28,7 +30,7 @@
 void test_buffer_1()
 {
   TRACE_ENTER;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   if (buffer_capacity(v) != 1)
     failtest("capacity %d != 1", buffer_capacity(v));
@@ -51,7 +53,7 @@ void test_buffer_2()
 {
   TRACE_ENTER;
   struct line_t l;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -79,7 +81,7 @@ void test_buffer_3()
 {
   TRACE_ENTER;
   struct line_t l;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -109,7 +111,7 @@ void test_buffer_4()
 {
   TRACE_ENTER;
   struct line_t l;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -143,7 +145,7 @@ void test_buffer_5()
   TRACE_ENTER;
   struct line_t l;
   struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -183,7 +185,7 @@ void test_buffer_6()
   struct line_t l;
   struct line_t* pl;
   struct cstr_t s;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&s, "This is a test");
   cstr_initstr(&l.txt, "This is a test");
@@ -221,7 +223,7 @@ void test_buffer_7()
   TRACE_ENTER;
   struct line_t l;
   //  struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -260,7 +262,7 @@ void test_buffer_8()
   TRACE_ENTER;
   struct line_t l;
   //struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -291,7 +293,7 @@ void test_buffer_9()
   TRACE_ENTER;
   struct line_t l;
   //struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -321,7 +323,7 @@ void test_buffer_10()
   TRACE_ENTER;
   struct line_t l;
   //struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -351,7 +353,7 @@ void test_buffer_11()
   TRACE_ENTER;
   struct line_t l;
   //struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -382,7 +384,7 @@ void test_buffer_12()
   TRACE_ENTER;
   struct line_t l;
   //struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -412,7 +414,7 @@ void test_buffer_13()
   TRACE_ENTER;
   struct line_t l;
   //struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -442,7 +444,7 @@ void test_buffer_14()
   TRACE_ENTER;
   struct line_t l;
   //struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -472,7 +474,7 @@ void test_buffer_15()
   TRACE_ENTER;
   struct line_t l;
   //struct line_t* pl;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -501,8 +503,8 @@ void test_buffer_16()
 {
   TRACE_ENTER;
   struct line_t l;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
-  BUFFER u = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
+  BUFFER u = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
 
   cstr_initstr(&l.txt, "This is a test");
   l.flags = 0;
@@ -565,7 +567,7 @@ void test_buffer_18()
 {
   TRACE_ENTER;
 
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   cstr t1filename;
   cstr_initstr(&t1filename, "t1.txt");
   POE_ERR err = buffer_load(v, &t1filename, 1);
@@ -622,7 +624,7 @@ void test_buffer_18()
 void test_buffer_19()
 {
   TRACE_ENTER;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   cstr t1ro_filename;
   cstr_initstr(&t1ro_filename, "t1_rdonly.txt");
   POE_ERR err = buffer_load(v, &t1ro_filename, 1);
@@ -673,14 +675,14 @@ void test_buffer_19()
 void test_buffer_20()
 {
   TRACE_ENTER;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   cstr t1ro_filename;
   cstr_initstr(&t1ro_filename, "t1_rdonly.txt");
   POE_ERR err = buffer_load(v, &t1ro_filename, 1);
   if (err != POE_ERR_OK)
     failtest("error %d loading t1_rdonly.txt", err);
 
-  BUFFER w = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER w = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   err = buffer_load(w, &t1ro_filename, 1);
   if (err != POE_ERR_OK)
     failtest("error %d loading t1_rdonly.txt the second time", err);
@@ -758,7 +760,7 @@ void test_buffer_20()
 void test_buffer_21()
 {
   TRACE_ENTER;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   cstr t1ro_filename;
   cstr_initstr(&t1ro_filename, "t1_rdonly.txt");
   POE_ERR err = buffer_load(v, &t1ro_filename, 1);
@@ -771,7 +773,7 @@ void test_buffer_21()
   if (err != POE_ERR_OK)
     failtest("error %d saving t1_save.txt", err);
 
-  BUFFER w = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER w = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   err = buffer_load(w, &t1save_filename, 1);
   if (err != POE_ERR_OK)
     failtest("error %d loading t1_save.txt", err);

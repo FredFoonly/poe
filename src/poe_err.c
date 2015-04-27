@@ -35,10 +35,10 @@ const char* poe_err_message(POE_ERR err)
   case POE_ERR_INVALID_NAME: rval = "Name given to NAME or EDIT was invalid"; break;
   case POE_ERR_KEY_NOT_DEFINED: rval = "No definition in POE.PRO"; break;
   case POE_ERR_LINE_MARK_REQ: rval = "Line mark required"; break;
-  case POE_ERR_MARKED_BLOCK_EXISTS: rval = "Already have a block in another buffer"; break;
+  case POE_ERR_MARKED_BLOCK_EXISTS: rval = "Already have a mark set (possibly in another file)"; break;
   case POE_ERR_MISSING_FILE_NAME: rval = "Save or FILE was missing file name"; break;
   case POE_ERR_MISSING_QUOTE: rval = "Missing ', \", or ]"; break;
-  case POE_ERR_NAME_IN_USE: rval = "Attempted to NAME current buffer to a name that is already in use"; break;
+  case POE_ERR_NAME_IN_USE: rval = "Attempted to NAME current file to a name that is already in use"; break;
   case POE_ERR_MISSING_EQ_DEFN: rval = "Missing '=' in definition"; break;
   case POE_ERR_NO_CHANGE_PENDING: rval = "Tried to execute [confirm change] when a change wasn't pending"; break;
   case POE_ERR_NO_MARKED_AREA: rval = "No mark"; break;

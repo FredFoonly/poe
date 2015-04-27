@@ -192,6 +192,9 @@ void pivec_remove(struct pivec_t* v, int i)
 int pivec_appendm(struct pivec_t* v, int n, intptr_t* a)
 {
   TRACE_ENTER;
+  int pos = v->ct;
+  if (n <= 0)
+	TRACE_RETURN(pos);
   if (v->ct + n > v->cap) {
     int tot = v->ct + n;
     v->cap = max(1, v->cap);
@@ -199,7 +202,6 @@ int pivec_appendm(struct pivec_t* v, int n, intptr_t* a)
       v->cap <<= 1;
     v->elts = reallocarray(v->elts, v->cap, sizeof(intptr_t));
   }
-  int pos = v->ct;
   memcpy(v->elts+pos, a, n*sizeof(intptr_t));
   v->ct += n;
   TRACE_RETURN(pos);
@@ -209,6 +211,8 @@ int pivec_appendm(struct pivec_t* v, int n, intptr_t* a)
 void pivec_insertm(struct pivec_t* v, int i, int n, intptr_t* a)
 {
   TRACE_ENTER;
+  if (n <= 0)
+	TRACE_EXIT;
 #ifdef DPOE_DBG_LIM
   if (i > v->ct)
     poe_err(1, "pivec_insertm %d/%d", i, v->ct);
@@ -232,6 +236,8 @@ void pivec_insertm(struct pivec_t* v, int i, int n, intptr_t* a)
 void pivec_removem(struct pivec_t* v, int i, int n)
 {
   TRACE_ENTER;
+  if (n <= 0)
+	TRACE_EXIT;
 #ifdef DPOE_DBG_LIM
   if (i+n > v->ct)
     poe_err(1, "pivec_removem %d/%d", i+n, v->ct);
@@ -353,6 +359,14 @@ void* vec_get(const struct vec_t* v, int i)
 }
 
 
+void* vec_getbufptr(const struct vec_t* v)
+{
+  TRACE_ENTER;
+  void* rval = (void*)v->elts;
+  TRACE_RETURN(rval);
+}
+
+
 void vec_set(struct vec_t* v, int i, void* a)
 {
   TRACE_ENTER;
@@ -420,13 +434,15 @@ void vec_remove(struct vec_t* v, int i)
 int vec_appendm(struct vec_t* v, int n, void* a)
 {
   TRACE_ENTER;
+  int pos = v->ct;
+  if (n <= 0)
+	TRACE_RETURN(pos);
   if (v->ct + n > v->cap) {
     int tot = v->ct + n;
     while (tot > v->cap)
       v->cap <<= 1;
     v->elts = reallocarray(v->elts, v->cap, v->eltsize);
   }
-  int pos = v->ct;
   memcpy(v->elts + pos*v->eltsize, a, n*v->eltsize);
   v->ct += n;
   TRACE_RETURN(pos);
@@ -436,6 +452,8 @@ int vec_appendm(struct vec_t* v, int n, void* a)
 void vec_insertm(struct vec_t* v, int i, int n, void* a)
 {
   TRACE_ENTER;
+  if (n <= 0)
+	TRACE_EXIT;
 #ifdef DPOE_DBG_LIM
   if (i > v->ct)
     poe_err(1, "vec_insertm %d/%d", i, v->ct);
@@ -459,6 +477,8 @@ void vec_insertm(struct vec_t* v, int i, int n, void* a)
 void vec_removem(struct vec_t* v, int i, int n)
 {
   TRACE_ENTER;
+  if (n <= 0)
+	TRACE_EXIT;
 #ifdef DPOE_DBG_LIM
   if (i+n > v->ct)
     poe_err(1, "vec_removem %d/%d", i+n, v->ct);

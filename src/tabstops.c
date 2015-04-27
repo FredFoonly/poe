@@ -71,7 +71,6 @@ void tabs_assign(struct tabstops_t* dst, struct tabstops_t* src)
 int tabs_next(struct tabstops_t* tabs, int col)
 {
   TRACE_ENTER;
-  //logerr("in tabs_next");
   int ntabstops = pivec_count(&tabs->vtabs);
   if (ntabstops > 0) {
     int i;
@@ -80,9 +79,7 @@ int tabs_next(struct tabstops_t* tabs, int col)
         TRACE_RETURN((int)pivec_get(&tabs->vtabs, i));
     }
   }
-  //logerr("tabs_step = %d", tabs->step);
   int nextcol = (((col - tabs->start + tabs->step) / tabs->step) * tabs->step) + tabs->start;
-  //logerr("nextcol = %d", nextcol);
   TRACE_RETURN(nextcol);
 }
 

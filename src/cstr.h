@@ -14,9 +14,10 @@ typedef struct cstr_t cstr;
 #define CSTR_NO_MISMATCH (-1)
 struct cstr_t* cstr_alloc(int capacity);
 struct cstr_t* cstr_allocstr(const char* s);
+struct cstr_t* cstr_allocstrn(const char* s, int len);
 void cstr_init(struct cstr_t* v, int capacity);
 void cstr_initfrom(struct cstr_t* dst, const struct cstr_t* src);
-void cstr_initfromn(struct cstr_t* dst, const struct cstr_t* src, int i, int n);
+void cstr_initfromn(struct cstr_t* dst, const struct cstr_t* src, int i, int len);
 void cstr_initstr(struct cstr_t* dst, const char* s);
 void cstr_initstrn(struct cstr_t* cst, const char* src, int len);
 void cstr_free(struct cstr_t* v);

@@ -39,6 +39,15 @@ struct cstr_t* cstr_allocstr(const char* s)
 }
 
 
+struct cstr_t* cstr_allocstrn(const char* s, int len)
+{
+  TRACE_ENTER;
+  struct cstr_t* v = calloc(1, sizeof(struct cstr_t));
+  cstr_initstrn(v, s, len);
+  TRACE_RETURN(v);
+}
+
+
 void cstr_init(struct cstr_t* v, int capacity)
 {
   TRACE_ENTER;
@@ -92,7 +101,7 @@ void cstr_initstr(struct cstr_t* dst, const char* s)
 void cstr_initstrn(struct cstr_t* dst, const char* s, int n)
 {
   TRACE_ENTER;
-  int l = strnlen(s, n);
+  int l = n < 0 ? 0 : strnlen(s, n);
   cstr_init(dst, l+1);
   cstr_appendm(dst, l, s);
   dst->ct = l;
@@ -156,7 +165,7 @@ void cstr_assignstrn(struct cstr_t* dst, const char* src, int n)
 {
   TRACE_ENTER;
   cstr_clear(dst);
-  int l = strnlen(src, n);
+  int l = n < 0 ? 0 : strnlen(src, n);
   cstr_appendm(dst, l, src);
   TRACE_EXIT;
 }
@@ -253,7 +262,7 @@ void cstr_setstrn(struct cstr_t* v, int i, const char* s, int n)
 void cstr_upper(struct cstr_t* v, int i, int n)
 {
   TRACE_ENTER;
-  if (i >= v->ct)
+  if (n <= 0 || i >= v->ct)
     TRACE_EXIT;
   int j;
   for (j = i; j < i+n && j < v->ct; j++) {
@@ -268,7 +277,7 @@ void cstr_upper(struct cstr_t* v, int i, int n)
 void cstr_lower(struct cstr_t* v, int i, int n)
 {
   TRACE_ENTER;
-  if (i >= v->ct)
+  if (n <= 0 || i >= v->ct)
     TRACE_EXIT;
   int j;
   for (j = i; j < i+n && j < v->ct; j++) {
@@ -375,7 +384,7 @@ void cstr_insert(struct cstr_t* v, int i, char a)
 void cstr_insertct(struct cstr_t* v, int i, char a, int n)
 {
   TRACE_ENTER;
-  if (n < 0)
+  if (n <= 0)
     TRACE_EXIT;
 #ifdef DPOE_DBG_LIM
   if (i > v->ct)
@@ -417,6 +426,8 @@ void cstr_remove(struct cstr_t* v, int i)
 void cstr_appendm(struct cstr_t* v, int n, const char* a)
 {
   TRACE_ENTER;
+  if (n <= 0)
+	TRACE_EXIT;
   if (v->ct + n > v->cap - 1) {
     int tot = v->ct + n;
     v->cap = max(1, v->cap);
@@ -433,6 +444,8 @@ void cstr_appendm(struct cstr_t* v, int n, const char* a)
 void cstr_insertm(struct cstr_t* v, int i, int n, const char* a)
 {
   TRACE_ENTER;
+  if (n <= 0)
+	TRACE_EXIT;
 #ifdef DPOE_DBG_LIM
   if (i > v->ct)
     poe_err(1, "cstr_insertm %d/%d", i, v->ct);
@@ -457,12 +470,14 @@ void cstr_insertm(struct cstr_t* v, int i, int n, const char* a)
 void cstr_removem(struct cstr_t* v, int i, int n)
 {
   TRACE_ENTER;
+  if (n <= 0)
+	TRACE_EXIT;
 #ifdef DPOE_DBG_LIM
   if (i+n > v->ct)
     poe_err(1, "cstr_removem %d/%d", i+n, v->ct);
 #endif
   if (i <= v->ct - n) {
-    memmove(v->elts+i, v->elts+i+n, (v->ct-i)*sizeof(char));
+    memmove(v->elts+i, v->elts+i+n, (v->ct-i-n)*sizeof(char));
 	memset(v->elts+v->ct-n, 0, n*sizeof(char));
 	v->ct -= n;
   }
@@ -533,6 +548,8 @@ int cstr_comparestri(const struct cstr_t* a, const const char* b)
 int cstr_comparestrat(const struct cstr_t* a, int offset, const char* b, int nchars)
 {
   TRACE_ENTER;
+  if (nchars <= 0)
+	TRACE_RETURN(0);
   int i;
   int la = cstr_count(a);
   const char* sa = a->elts;
@@ -555,6 +572,8 @@ int cstr_comparestrat(const struct cstr_t* a, int offset, const char* b, int nch
 int cstr_comparestriat(const struct cstr_t* a, int offset, const char* b, int nchars)
 {
   TRACE_ENTER;
+  if (nchars <= 0)
+	TRACE_RETURN(0);
   int i;
   int la = cstr_count(a);
   const char* sa = a->elts;

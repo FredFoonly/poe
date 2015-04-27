@@ -11,9 +11,11 @@
 #include "bufid.h"
 #include "mark.h"
 #include "markstack.h" 
-#include "key_interp.h"
+#include "margins.h"
 #include "tabstops.h"
+#include "key_interp.h"
 #include "buffer.h"
+#include "editor_globals.h"
 
 #include "testing.h"
 
@@ -29,7 +31,7 @@ void test_markstack_1()
 void test_markstack_2()
 {
   TRACE_ENTER;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   BUFFER w = BUFFER_NULL;
   enum marktype typ;
   int l1, c1, l2, c2;
@@ -93,7 +95,7 @@ void test_markstack_2()
 void test_markstack_3()
 {
   TRACE_ENTER;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   //BUFFER w = BUFFER_NULL;
 
   markstack_cur_unmark();
@@ -120,7 +122,7 @@ void test_markstack_3()
 void test_markstack_4()
 {
   TRACE_ENTER;
-  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0);
+  BUFFER v = buffer_alloc("", BUF_FLG_INTERNAL, 0, default_profile);
   BUFFER w = BUFFER_NULL;
   POE_ERR err;
   enum marktype typ;

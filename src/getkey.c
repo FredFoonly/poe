@@ -184,7 +184,7 @@ enum confirmation_t get_confirmation(const char* prompt)
 }
 
 
-const char* ui_get_key()
+const char* ui_get_key(void)
 {
   TRACE_ENTER;
   static char _keyname[MAX_KEYSEQ_NAME_LEN];

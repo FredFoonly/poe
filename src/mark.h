@@ -3,6 +3,9 @@ extern MARK INVALID_MARK;
 
 #define MARK_FLG_VISIBLE (1<<0)
 #define MARK_FLG_BOOKMARK (1<<1)
+#define MARK_FLG_STARTED (1<<2)
+#define MARK_FLG_ENDED (1<<3)
+#define MARK_FLG_SEALED (1<<4)
 
 
 void init_marks(void);
@@ -10,6 +13,7 @@ void shutdown_marks(void);
 
 MARK mark_alloc(int flags);
 void mark_free(MARK mark);
+
 void mark_unmark(MARK mark);
 void mark_must_exist(const char* dbgstr, MARK mark);
 int mark_exists(MARK mark);
@@ -33,6 +37,7 @@ POE_ERR mark_get_bookmark(MARK mark, enum marktype typ, int *pline, int* pcol);
 POE_ERR mark_place(MARK mark, enum marktype typ, BUFFER buf, int line, int col);
 POE_ERR mark_start(MARK mark, enum marktype typ, BUFFER buf, int line, int col);
 POE_ERR mark_extend(MARK mark, enum marktype typ, BUFFER buf, int line, int col);
+void mark_seal(MARK mark);
 
 
 bool mark_hittest_point(MARK mark, BUFFER buf, int row, int col, int flags_mask, int flags_chk);

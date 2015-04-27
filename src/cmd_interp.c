@@ -23,6 +23,17 @@
 #include "editor_globals.h"
 
 
+POE_ERR check_command(pivec* cmdseq, int pc)
+{
+  TRACE_ENTER;
+  POE_ERR err = POE_ERR_OK;
+  int args = -1;
+  command_handler_t func = lookup_command(cmdseq, pc, &args);
+  if (func == NULL)
+	err = POE_ERR_UNK_CMD;
+  TRACE_RETURN(err);
+}
+
 
 
 POE_ERR interpret_command_seq(cmd_ctx* ctx)

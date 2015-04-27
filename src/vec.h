@@ -53,6 +53,7 @@ void vec_clear(struct vec_t* dst);
 int vec_count(const struct vec_t* v);
 int vec_capacity(const struct vec_t* v);
 void* vec_get(const struct vec_t* v, int i);
+void* vec_getbufptr(const struct vec_t* v);
 void vec_set(struct vec_t* v, int i, void* a);
 int vec_append(struct vec_t* v, void* a);
 void vec_insert(struct vec_t* v, int i, void* a);

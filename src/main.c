@@ -29,6 +29,7 @@
 #include "cmd_interp.h"
 #include "default_profile.h"
 #include "editor_globals.h"
+#include "srchpath.h"
 
 
 
@@ -60,6 +61,8 @@ static jmp_buf* __pjmpbuf = NULL;
 
 int _do_main(int argc, char** argv);
 const char* decode_key(int c);
+
+POE_ERR _load_default_profile(void);
 
 
 int main(int argc, char** argv)
@@ -130,8 +133,8 @@ int _do_main(int argc, char** argv)
   //fprintf(stderr, "logging = %d\n", args.logging);
   init_logging(args.logging);
   //logmsg("========================================");
-  tabs_init(&default_tabstops, 0, 8, NULL);
-  margins_init(&default_margins, 0, 79, 4);
+  /* tabs_init(&default_tabstops, 0, 8, NULL); */
+  /* margins_init(&default_margins, 0, 79, 4); */
 
   //logmsg("init marks");
   init_marks();
@@ -149,35 +152,57 @@ int _do_main(int argc, char** argv)
   set_default_profile();
   //logmsg("init commands");
   init_commands();
+  
+  const char* poe_profile_path = getenv("POE_PROFILE_PATH");
+  if (poe_profile_path == NULL)
+	poe_profile_path = ".:~/.poe:/usr/local/share/poe:~/usr/local/share/poe";
+  set_profile_searchpath(poe_profile_path);
 
   // attempt to set curses escape delay directly.
   if (args.escdelay != NULL && strlen(args.escdelay) > 0)
     set_escdelay((int)atol(args.escdelay));
 
+  POE_ERR err = _load_default_profile();
+  if (err != POE_ERR_OK) {
+	wins_set_message(poe_err_message(cmd_error));
+  }
+  win_set_commandmode(wins_get_cur(), default_profile->oncommand);
+
   // Create internal buffers (should probably do this before loading the files...)
-  dir_buffer = buffer_alloc(".DIR", BUF_FLG_INTERNAL|BUF_FLG_NEW, 0);
-  keys_buffer = buffer_alloc(".KEYS", BUF_FLG_INTERNAL|BUF_FLG_NEW, 0);
-  unnamed_buffer = buffer_alloc(".UNNAMED", BUF_FLG_INTERNAL|BUF_FLG_NEW, 0);
+  dir_buffer = buffer_alloc(".DIR", BUF_FLG_INTERNAL|BUF_FLG_NEW, 0, default_profile);
+  keys_buffer = buffer_alloc(".KEYS", BUF_FLG_INTERNAL|BUF_FLG_NEW, 0, default_profile);
+  unnamed_buffer = buffer_alloc(".UNNAMED", BUF_FLG_INTERNAL|BUF_FLG_NEW, 0, default_profile);
   buffer_ensure_min_lines(dir_buffer, false);
   buffer_ensure_min_lines(keys_buffer, false);
   buffer_ensure_min_lines(unnamed_buffer, false);
 
-  // load the files
-  int i, n = pivec_count(&args.files);
-  if (n == 0) {
-    //logmsg("allocating initial empty buffer");
-    BUFFER initial_buffer = buffer_alloc("", BUF_FLG_VISIBLE, 0);
-    buffer_ensure_min_lines(initial_buffer, false);
+  if (err == POE_ERR_OK) {
+	// load the files
+	int i, n = pivec_count(&args.files);
+	if (n == 0) {
+	  //logmsg("allocating initial empty buffer");
+	  BUFFER initial_buffer = buffer_alloc("", BUF_FLG_VISIBLE, 0, default_profile);
+	  buffer_ensure_min_lines(initial_buffer, false);
+	}
+	else {
+	  //logmsg("loading files from command line");
+	  for (i = 0; i < n; i++) {
+		BUFFER buf = buffer_alloc("", BUF_FLG_VISIBLE, 0, default_profile);
+		cstr* filename = (cstr*)pivec_get(&args.files, i);
+		//logmsg("loading file '%s'", cstr_getbufptr(filename));
+		/*POE_ERR err = */buffer_load(buf, filename, default_profile->tabexpand);
+	  }
+	}
+	// switch away from poe.pro...
+	wins_cur_nextbuffer();
   }
-  else {
-    //logmsg("loading files from command line");
-    for (i = 0; i < n; i++) {
-      BUFFER buf = buffer_alloc("", BUF_FLG_VISIBLE, 0);
-      cstr* filename = (cstr*)pivec_get(&args.files, i);
-      //logmsg("loading file '%s'", cstr_getbufptr(filename));
-      /*POE_ERR err = */buffer_load(buf, filename, tabexpand);
-    }
+  else if (err == POE_ERR_FILE_NOT_FOUND || err == POE_ERR_CMD_FILE_NOT_FOUND) {
+	// switch away from the poe.pro that we couldn't load...
+	BUFFER initial_buffer = buffer_alloc("", BUF_FLG_VISIBLE, 0, default_profile);
+	buffer_ensure_min_lines(initial_buffer, false);
+	wins_cur_nextbuffer();
   }
+  
 
   // Event loop for the editor
   char achKeyname[64];
@@ -402,3 +427,103 @@ void _pe_catch_sig(int sigraised)
 
 
 
+
+//
+// KMP The core of this function needs to be moved into the command
+// MACRO, which also gets rid of the need for the following declarations.
+//
+POE_ERR cmd_cursor_data(cmd_ctx* ctx);
+POE_ERR cmd_copy_to_command(cmd_ctx* ctx);
+POE_ERR cmd_execute(cmd_ctx* ctx);
+
+POE_ERR _load_default_profile(void)
+{
+  TRACE_ENTER;
+  PROFILEPTR profile = alloc_profile("poe.pro");
+  BUFFER profile_buffer = buffer_alloc("poe.pro", BUF_FLG_INTERNAL|BUF_FLG_VISIBLE, 0, profile);
+  wins_ensure_initial_win();
+  wins_cur_switchbuffer(profile_buffer);
+
+  char achPoeProfile[PATH_MAX+1];
+  cstr str_profile_name;
+  cstr_initstr(&str_profile_name, achPoeProfile);
+  POE_ERR err = POE_ERR_OK;
+
+  bool bFound = find_profile_file("poe.pro", achPoeProfile, sizeof(achPoeProfile));
+  if (bFound) {
+	cstr_assignstr(&str_profile_name, achPoeProfile);
+	err = buffer_load(profile_buffer, &str_profile_name, true);
+  }
+  else {
+	err = POE_ERR_CMD_FILE_NOT_FOUND;
+	buffer_ensure_min_lines(profile_buffer, false);
+  }
+  
+  struct cmd_ctx_t ctx;
+  update_context(&ctx);
+  int err_row = 0, err_col = 0;
+
+  // Parse the profile if we loaded it.
+  if (err == POE_ERR_OK) {
+	int i;
+	for (i = 0; i < buffer_count(profile_buffer); i++) {
+	  if (buffer_isblankline(profile_buffer, i))
+		continue;
+	  if (buffer_getchar(profile_buffer, i, 0) == '#')
+		continue;
+	  cmd_cursor_data(&ctx);
+	  update_context(&ctx);
+	  view_move_cursor_to(ctx.data_view, i, 0);
+	  update_context(&ctx);
+	  cmd_copy_to_command(&ctx);
+	  update_context(&ctx);
+	  if (err != POE_ERR_OK) {
+		cmd_execute(&ctx);
+	  }
+	  else {
+		err = cmd_execute(&ctx);
+		if (err != POE_ERR_OK) {
+		  view_get_cursor(ctx.cmd_view, &err_row, &err_col);
+		  logerr("Error executing file '%s' @ line %d col %d, error = %d (%s)", 
+				 achPoeProfile, i, err_col, err, poe_err_message(err));
+		  err_row = i;
+		}
+	  }
+	  update_context(&ctx);
+	  if (ctx.targ_buf != profile_buffer)
+		wins_cur_switchbuffer(profile_buffer);
+	}
+  }
+
+  // Finish setting up the profile (set tabs and set margins don't
+  // update the profile by default; everything else does).
+  if (err == POE_ERR_OK) {
+	//logmsg("Successfully loaded profile file '%s'", achPoeProfile);
+	buffer_clrflags(profile_buffer, BUF_FLG_VISIBLE);
+	
+	// copy the tabs from the buffer to the profile.
+	tabstops tabs;
+	tabs_init(&tabs, 0, 8, NULL);
+	buffer_gettabs(profile_buffer, &tabs);
+	tabs_assign(&profile->default_tabstops, &tabs);
+	tabs_destroy(&tabs);
+
+	// copy the margins from the buffer to the profile.
+	int leftmargin, rightmargin, pgraphmargin;
+	buffer_getmargins(profile_buffer, &leftmargin, &rightmargin, &pgraphmargin);
+	margins_set(&profile->default_margins, leftmargin, rightmargin, pgraphmargin);
+
+	// and update the default profile.
+	buffers_switch_profiles(profile, default_profile);
+	default_profile = profile;
+	sort_profile_keydefs(profile);
+  }
+  else if (err == POE_ERR_CMD_FILE_NOT_FOUND) {
+	cmd_error = err;
+  }
+  else {
+	view_move_cursor_to(ctx.targ_view, err_row, err_col);
+	cmd_error = err;
+  }
+  TRACE_RETURN(err);
+}

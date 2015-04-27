@@ -12,6 +12,7 @@
 #include "bufid.h"
 #include "mark.h"
 #include "tabstops.h"
+#include "margins.h"
 #include "key_interp.h"
 #include "buffer.h"
 #include "view.h"

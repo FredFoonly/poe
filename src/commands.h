@@ -30,6 +30,24 @@ typedef struct cmd_ctx_t cmd_ctx;
 
 typedef POE_ERR (*command_handler_t)(cmd_ctx* ctx);
 
+
+////////////////////////////////////////
+// Not being used yet...
+enum parm_type_t { intlit, stringlit, charlit };
+struct parm_t {
+  enum parm_type_t parm_type;
+  int ival;
+  const char* sval;
+  char cval;
+};
+
+struct preproc_cmd_t {
+  command_handler_t cmd_func;
+  vec/*parm_t*/* parms_idx;
+};
+////////////////////////////////////////
+
+
 void init_commands(void);
 void close_commands(void);
 command_handler_t lookup_command(const pivec* cmd, int pc, int* args_idx);

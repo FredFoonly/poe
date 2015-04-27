@@ -26,6 +26,7 @@
 #include "view.h"
 #include "window.h"
 #include "commands.h"
+#include "cmd_interp.h"
 #include "editor_globals.h"
 
 
@@ -41,15 +42,18 @@ bool _scanword(const cstr* str, cstr* tok_str, int* ppos);
 bool _scannum(const cstr* str, cstr* tok_str, int* ppos);
 enum token_t _scantoken(const cstr* str, cstr* tok_str, int* ppos);
 bool _scankeyname(const cstr* str, cstr* tok_str, int* ppos);
+//bool _scanlocateoptions(const cstr* str, cstr* tok_str, int* ppos);
 bool _scan_locate_pattern(const cstr* str, cstr* tok_str, int* ppos, char* delimiter);
 bool _scan_locate_replacement(const cstr* str, cstr* tok_str, int* ppos, char delimiter);
 
 
-POE_ERR _parse_command(const cstr* str, cstr* tok, int* ppos, pivec* tokens, int level)
+POE_ERR _parse_single_command(const cstr* str, cstr* tok, int* ppos, pivec* tokens, int level)
 {
   TRACE_ENTER;
   POE_ERR err = POE_ERR_OK;
   int pos = *ppos;
+  
+  //logmsg("parsing single command '%s'", cstr_getcharptr(str, pos));
 
   if (cstr_get(str, pos) == '/') {
     // shortcut for locate
@@ -104,7 +108,7 @@ POE_ERR _parse_command(const cstr* str, cstr* tok, int* ppos, pivec* tokens, int
 
 
 
-POE_ERR parse_cmdline(const cstr* str, pivec* tokens)
+POE_ERR parse_cmdline(const cstr* str, pivec* tokens, int* parsepos)
 {
   TRACE_ENTER;
   pivec_clear(tokens);
@@ -114,6 +118,7 @@ POE_ERR parse_cmdline(const cstr* str, pivec* tokens)
   cstr_trimright(&tmp, poe_iswhitespace);
   cstr_trimleft(&tmp, poe_iswhitespace);
   if (cstr_count(&tmp) == 0) {
+	*parsepos = 0;
     err = POE_ERR_OK;
     goto done;
   }
@@ -122,11 +127,12 @@ POE_ERR parse_cmdline(const cstr* str, pivec* tokens)
   cstr tok;
   cstr_init(&tok, 20);
   
-  err = _parse_command(&tmp, &tok, &pos, tokens, 0);
+  err = _parse_single_command(&tmp, &tok, &pos, tokens, 0);
 
  done:
   cstr_destroy(&tok);
   cstr_destroy(&tmp);
+  *parsepos = pos;
   TRACE_RETURN(err);
 }
 
@@ -224,27 +230,48 @@ POE_ERR _parse_define_subcommand(const cstr* str, cstr* tok_str, int* ppos, pive
 	pos = cstr_skipwhile(str, pos, poe_iswhitespace);
   }
   // skip '['
-  if (pos >= cstr_count(str))
+  if (pos >= cstr_count(str)) {
+	logmsg("command parser: scanned past end looking for start of cmd seq");
 	TRACE_RETURN(POE_ERR_MISSING_QUOTE);
+  }
   char c = cstr_get(str, pos);
   //logmsg("parse_define_subcommand @ %d c1 = '%c'", pos, c);
-  if (c != '[')
+  if (c != '[') {
+	logmsg("command parser: missing [ @ %d, got %d (%c)", pos, c, c);
 	TRACE_RETURN(POE_ERR_MISSING_QUOTE);
+  }
 
-  // parse command
+  // parse and check command
   pos++;
-  err = _parse_command(str, tok_str, &pos, tokens, 1);
+  int start_of_cmd_pos = pos;
+  int start_of_cmd_tokens = pivec_count(tokens);
+  err = _parse_single_command(str, tok_str, &pos, tokens, 1);
   if (err != POE_ERR_OK)
 	TRACE_RETURN(err);
-
   pivec_append(tokens, CMD_SEP);
+  int end_of_cmd_tokens = pivec_count(tokens);
+  pivec_append(tokens, CMD_NULL);
+  err = check_command(tokens, start_of_cmd_tokens);
+  pivec_remove(tokens, end_of_cmd_tokens);
+  if (err != POE_ERR_OK) {
+	*ppos = start_of_cmd_pos;
+	TRACE_RETURN(err);
+  }
+
+  // skip spaces again
+  if (pos < cstr_count(str)) {
+	pos = cstr_skipwhile(str, pos, poe_iswhitespace);
+  }
 
   // skip ']'
   //logmsg("attempting to get trailing ']' @ %d", pos);
   c = cstr_get(str, pos);
   //logmsg("parse_define_subcommand @ %d c2 = '%c'", pos, c);
-  if (c != ']')
+  if (c != ']') {
+	logmsg("command parser: missing ] @ %d -- have %d (%c)", pos, c, c);
+	//logmsg("cmd = '%s'", cstr_getbufptr(str));
 	TRACE_RETURN(POE_ERR_MISSING_QUOTE);
+  }
 
   // skip whitespace
   pos++;
@@ -406,7 +433,7 @@ bool _scanword(const cstr* str, cstr* tok_str, int* ppos)
   if (wrdstart >= len) {
     TRACE_RETURN(false);
   }
-  int wrdend = cstr_skipwhile(str, wrdstart, poe_isnotwhitespace);
+  int wrdend = cstr_skipwhile(str, wrdstart, poe_isword);
   if (wrdend == wrdstart) {
     TRACE_RETURN(false);
   }
@@ -415,6 +442,26 @@ bool _scanword(const cstr* str, cstr* tok_str, int* ppos)
   *ppos = wrdend;
   TRACE_RETURN(true);
 }
+
+
+/* bool _scanlocateoptions(const cstr* str, cstr* tok_str, int* ppos) */
+/* { */
+/*   TRACE_ENTER; */
+/*   int len = cstr_count(str); */
+/*   cstr_clear(tok_str); */
+/*   int wrdstart = cstr_skip_ws(str, *ppos); */
+/*   if (wrdstart >= len) { */
+/*     TRACE_RETURN(false); */
+/*   } */
+/*   int wrdend = cstr_skipwhile(str, wrdstart, poe_islocateoption); */
+/*   if (wrdend == wrdstart) { */
+/*     TRACE_RETURN(false); */
+/*   } */
+/*   const char* s = cstr_getcharptr(str, wrdstart); */
+/*   cstr_assignstrn(tok_str, s, wrdend-wrdstart); */
+/*   *ppos = wrdend; */
+/*   TRACE_RETURN(true); */
+/* } */
 
 
 enum token_t _scantoken(const cstr* str, cstr* tok_str, int* ppos)
@@ -498,10 +545,11 @@ bool _scankeyname(const cstr* str, cstr* tok_str, int* ppos)
   bool havetoken = false;
   char c = cstr_get(str, wrdstart);
   //logmsg("scantoken pos %d char %c", wrdstart, c);
-  if (poe_isdigit(c)) {
-	havetoken = false;
-  }
-  else if (c == '\'') {
+  /* if (poe_isdigit(c)) { */
+  /* 	havetoken = false; */
+  /* } */
+  /* else */
+  if (c == '\'') {
     wrdend = cstr_skiptill(str, wrdstart+1, poe_isquote);
     if (wrdend > wrdstart+1 && cstr_get(str, wrdend) == '\'') {
       char tmp[16];

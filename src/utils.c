@@ -12,6 +12,7 @@
 #include "utils.h"
 
 
+
 char achPoeHome[PATH_MAX+1];
 
 void ensure_poe_dir()
@@ -126,6 +127,19 @@ int poe_isnotquote(char c)
 {
   return !poe_isquote(c);
 }
+
+
+int poe_islocateoption(char c)
+{
+  return isalpha(c) || c == '*' || c == '+' || c == '-';
+}
+
+
+int poe_isnotlocateoption(char c)
+{
+  return !poe_islocateoption(c);
+}
+
 
 
 /* int max(int a, int b) */
