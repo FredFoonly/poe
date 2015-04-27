@@ -25,7 +25,7 @@ void poe_err(int rc, const char* fmt, ...)
   va_end(ap);
   logerr("%s", message);
   trace_stack_print();
-  err(rc, message);
+  err(rc, "%s", message);
   TRACE_EXIT;
 }
 
