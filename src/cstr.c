@@ -529,7 +529,7 @@ int cstr_comparei(const struct cstr_t* a, const struct cstr_t* b)
 }
 
 
-int cstr_comparestr(const struct cstr_t* a, const const char* b)
+int cstr_comparestr(const struct cstr_t* a, const char* b)
 {
   TRACE_ENTER;
   int rval = cstr_comparestrat(a, 0, b, strlen(b));
@@ -537,7 +537,7 @@ int cstr_comparestr(const struct cstr_t* a, const const char* b)
 }
 
 
-int cstr_comparestri(const struct cstr_t* a, const const char* b)
+int cstr_comparestri(const struct cstr_t* a, const char* b)
 {
   TRACE_ENTER;
   int rval = cstr_comparestriat(a, 0, b, strlen(b));

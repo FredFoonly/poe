@@ -202,3 +202,18 @@ char* strlwr(char* s)
   }
   return s;
 }
+
+
+#ifndef __OpenBSD__
+void *
+reallocarray(void *optr, size_t nmemb, size_t size)
+{
+  const size_t mul_no_overflow = (size_t)1 << (sizeof(size_t) * 4);
+  if ((nmemb >= mul_no_overflow || size >= mul_no_overflow) &&
+	  nmemb > 0 && SIZE_MAX / nmemb < size) {
+	errno = ENOMEM;
+	return NULL;
+  }
+  return realloc(optr, size * nmemb);
+}
+#endif
