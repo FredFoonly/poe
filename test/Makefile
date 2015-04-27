@@ -13,6 +13,7 @@ LIBS = -L. -lncurses
 all: $(EXE)
 
 test: all
+	chmod -w ./t1_rdonly.txt
 	../bin/poetest
 
 $(EXE) : $(OBJS) $(POEOBJS) $(OBJLIBS)
