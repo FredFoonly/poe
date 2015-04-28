@@ -1,4 +1,8 @@
 
+#if !defined(__OpenBSD__) && !defined(__FreeBSD__)
+#define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +10,9 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <sys/errno.h>
+#if defined(__OpenBSD__) || defined(__FreeBSD__)
 #include <libgen.h>
+#endif
 #include <limits.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -1311,8 +1317,8 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
   cstr_assignstr(&buf->orig_filename, pszFilename);
   cstr_assignstr(&buf->curr_filename, pszFilename);
   
-  const char* pszBasename = basename(pszFilename);
-  const char* pszDirname = dirname(pszFilename);
+  const char* pszBasename = (const char*)basename(pszFilename);
+  const char* pszDirname = (const char*)dirname(pszFilename);
   if (pszBasename == NULL)
 	logerr("basename('%s') returned error %d", pszFilename, errno);
   
@@ -1339,6 +1345,7 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
 	flg_rdonly = BUF_FLG_RDONLY;
   }
   if (f == NULL) {
+    logerr("error %d opening file '%s'", errno, pszFilename);
 	buffer_setflags(buf, BUF_FLG_NEW);
 	switch (errno) {
 	case EPERM: case EIO: case EACCES:

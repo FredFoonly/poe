@@ -52,6 +52,13 @@ int poe_isnotlocateoption(char c);
 
 
 #ifndef __OpenBSD__
-void *reallocarray(void *optr, size_t nmemb, size_t size);
+void *reallocarray(void* optr, size_t nmemb, size_t size);
+#endif
+
+
+#if !defined(__OpenBSD__) && !defined(__FreeBSD__)
+size_t strlcpy(char *dst, const char *src, size_t dsize);
+size_t strlcat(char* dst, const char* src, size_t dsize);
+char* dirname(const char* path);
 #endif
 

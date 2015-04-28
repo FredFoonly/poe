@@ -6,7 +6,10 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/errno.h>
+#include <sys/param.h>
+#ifdef BSD
 #include <libgen.h>
+#endif
 #include <unistd.h>
 
 

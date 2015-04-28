@@ -5,7 +5,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/param.h>
+#ifdef BSD
 #include <libgen.h>
+#endif
 #include <limits.h>
 
 #include "trace.h"

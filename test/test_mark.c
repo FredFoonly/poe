@@ -642,13 +642,17 @@ void test_mark_21()
   // test insertion starting on the mark line before mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("3: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_insertedcharblk((BUFFER)1, 2, 2, 5, 5, 5);
   // -> (7,9) (7,14)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("3: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 7 || c1 != 8 || l2 != 7 || c2 != 13)
     failtest("mark_upd_insertedchars/3 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -673,13 +677,17 @@ void test_mark_22()
   // test insertion starting on the mark line inside mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("4: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_insertedcharblk((BUFFER)1, 2, 7, 5, 5, 5);
   // -> (2,5) (7,8)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("4: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 5 || l2 != 7 || c2 != 8)
     failtest("mark_upd_insertedchars/4 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -704,13 +712,17 @@ void test_mark_23()
   // test insertion starting on the mark line beyond mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("5: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_insertedcharblk((BUFFER)1, 2, 11, 5, 5, 5);
   // -> (2,5) (7,8)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("5: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 5 || l2 != 2 || c2 != 10)
     failtest("mark_upd_insertedchars/5 moved the mark when it shouldn't (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -735,13 +747,17 @@ void test_mark_24()
   // test insertion starting on the first mark line before start col
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 3, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("6: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_insertedcharblk((BUFFER)1, 2, 2, 5, 5, 5);
   // -> (7,8) (8,9)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("6: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 7 || c1 != 8 || l2 != 8 || c2 != 10)
     failtest("mark_upd_insertedchars/6 did't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -766,13 +782,17 @@ void test_mark_25()
   // test insertion starting on the first mark line after start col
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 3, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("7: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_insertedcharblk((BUFFER)1, 2, 7, 5, 5, 5);
   // -> (2,5) (8,9)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("7: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 5 || l2 != 8 || c2 != 10)
     failtest("mark_upd_insertedchars/7 didn't move the mark correctly(%d/%d %d/%d) (%d/%d %d/%d)",
@@ -797,13 +817,17 @@ void test_mark_26()
   // test insertion starting on the last mark line inside mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 3, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("8: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_insertedcharblk((BUFFER)1, 3, 6, 5, 5, 5);
   // -> (2,5) (9,9)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("8: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 5 || l2 != 8 || c2 != 9)
     failtest("mark_upd_insertedchars/8 did't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -828,13 +852,17 @@ void test_mark_27()
   // test insertion starting on the end mark line after end col
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 3, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("9: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_insertedcharblk((BUFFER)1, 3, 11, 5, 5, 5);
   // -> (2,5) (9,9)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("9: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 5 || l2 != 3 || c2 != 10)
     failtest("mark_upd_insertedchars/9 moved the mark when it shouldn't (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -869,6 +897,7 @@ void test_mark_28()
   marks_upd_removedcharblk((BUFFER)0, 0, 3, 5, 6, 5);
   // no-op -> (1,2) (5,6)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   if (l1 != 10 || c1 != 2 || l2 != 15 || c2 != 6)
     failtest("mark_upd_removedchars/1 moved the mark for the wrong buffer (%d %d) (%d %d)",
              l1, 10, c1, 2, l2, 15, c2, 6);
@@ -929,13 +958,17 @@ void test_mark_30()
   // test deletion starting on the mark line before mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("3: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 2, 2, 0, 2, 0);
   // -> (2,3) (2,8)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("3: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 3 || l2 != 2 || c2 != 8)
     failtest("mark_upd_removedchars/3 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -960,13 +993,17 @@ void test_mark_31()
   // test deletion starting on the mark line inside mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("4: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 2, 6, 0, 2, 0);
   // -> (2,5) (2,8)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("4: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 5 || l2 != 2 || c2 != 8)
     failtest("mark_upd_removedchars/4 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -991,13 +1028,17 @@ void test_mark_32()
   // test deletion starting on the mark line after mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("5: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 2, 12, 0, 2, 0);
   // -> (2,5) (2,10)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("5: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 5 || l2 != 2 || c2 != 10)
     failtest("mark_upd_removedchars/5 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -1022,15 +1063,18 @@ void test_mark_33()
   // test deletion starting on the mark line enveloping mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err/1 not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err/2 not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err/3 not ok");
   //printf("6: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 2, 3, 0, 10, 0);
   // -> unmarked
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
   //printf("6: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
-  if (typ != Marktype_None)
+  if (err == POE_ERR_OK || typ != Marktype_None)
     failtest("mark_upd_removedchars/6 didn't unmark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
              l1, 0, c1, 0, l2, 0, c2, 0);
 
@@ -1053,13 +1097,17 @@ void test_mark_34()
   // test deletion starting on the mark line crossing into mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("7: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 2, 3, 0, 5, 0);
   // -> (2,3) (2,5)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("7: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 3 || l2 != 2 || c2 != 5)
     failtest("mark_upd_removedchars/7 didn't unmark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -1084,13 +1132,17 @@ void test_mark_35()
   // test deletion starting on the mark line crossing out of mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 2, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("8: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 2, 8, 0, 5, 0);
   // -> (2,5) (2,8)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("8: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 2 || c1 != 5 || l2 != 2 || c2 != 8)
     failtest("mark_upd_removedchars/8 didn't unmark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -1119,13 +1171,17 @@ void test_mark_36()
   // test deletion ending on the line before mark start line
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 5, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 10, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("9: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 2, 2, 2, 2, 2);
   // -> (3,5) (8,10)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("9: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 3 || c1 != 5 || l2 != 8 || c2 != 10)
     failtest("mark_upd_removedchars/9 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -1150,13 +1206,17 @@ void test_mark_37()
   // test deletion ending on the mark start line, with a 2-line mark
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 5, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 6, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("10: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 3, 25, 2, 2, 2);
   // -> (3,28) (4,10)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("10: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 3 || c1 != 28 || l2 != 4 || c2 != 10)
     failtest("mark_upd_removedchars/10 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -1181,13 +1241,17 @@ void test_mark_38()
   // test deletion starting and ending between the mark lines.
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 5, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 10, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("11: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 6, 25, 2, 2, 2);
   // -> (5,5) (8,10)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("11: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 5 || c1 != 5 || l2 != 8 || c2 != 10)
     failtest("mark_upd_removedchars/11 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",
@@ -1212,13 +1276,17 @@ void test_mark_39()
   // test deletion starting on the last mark line.
   // reset marks
   err = mark_place(m, Marktype_Char, (BUFFER)1, 5, 5);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_place(m, Marktype_Char, (BUFFER)1, 10, 10);
+  if (err != POE_ERR_OK) failtest("err not ok");
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("12: pre mark  = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   // insert
   marks_upd_removedcharblk((BUFFER)1, 10, 3, 5, 30, 2);
   // -> (5,5) (10,3) // pe2 gets this wrong - it's end mark column doesn't change - ends on (10,10)
   err = mark_get_bounds(m, &typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK) failtest("err not ok");
   //printf("12: post mark = (%d %d) (%d %d)\n", l1, c1, l2, c2);
   if (l1 != 5 || c1 != 5 || l2 != 10 || c2 != 3)
     failtest("mark_upd_removedchars/12 didn't move the mark correctly (%d/%d %d/%d) (%d/%d %d/%d)",

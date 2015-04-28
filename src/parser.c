@@ -6,7 +6,10 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <sys/errno.h>
+#include <sys/param.h>
+#if defined(__OpenBSD__) || defined(__FreeBSD__)
 #include <libgen.h>
+#endif
 #include <limits.h>
 #include <ctype.h>
 

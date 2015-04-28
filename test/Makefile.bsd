@@ -1,5 +1,5 @@
 
-include ../Makefile.inc
+include ../bsd/Makefile.inc
 
 CFLAGS = $(PRJCFLAGS) -I../src/
 
@@ -23,7 +23,7 @@ clean :
 	$(ECHO) cleaning up in .
 	$(RM) -f $(EXE) $(OBJS) $(OBJLIBS)
 	$(RM) -f *.s
-	-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
+	-for d in $(DIRS); do (cd $$d; $(MAKE) -f Makefile.bsd clean ); done
 
 install :
 
@@ -33,5 +33,5 @@ uninstall :
 	-rm $(PREFIX)/bin/poe
 
 $(POEOBJS) : 
-	@(cd ../src; $(MAKE) all)
+	@(cd ../src; $(MAKE) -f Makefile.bsd all)
 

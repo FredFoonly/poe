@@ -1,4 +1,8 @@
 
+#if !defined(__OpenBSD__) && !defined(__FreeBSD__)
+#define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -726,7 +730,7 @@ int cstr_findi(const struct cstr_t* str, int i, const struct cstr_t* pat, int di
   if (direction > 0) {
     int slen = str->ct;
     i = min(slen, i);
-    const char* r = strcasestr(s+i, p);
+    const char* r = (const char*)strcasestr(s+i, p);
     if (r == NULL)
       TRACE_RETURN(-1)
     else

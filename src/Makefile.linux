@@ -1,5 +1,5 @@
 
-include ../Makefile.inc
+include ../linux/Makefile.inc
 
 CFLAGS = $(PRJCFLAGS)
 EXE = ../bin/poe

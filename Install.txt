@@ -1,8 +1,9 @@
 
-To install Poe, edit the Makefile.inc file, and change the PROFILE 
-variable to either debug or release, and change the PREFIX_RELEASE and 
-PREFIX_DEBUG variables to the location where you would like to install it 
-to.  
+To install Poe, cd to either the bsd or linux directory as
+appropriate, then edit the Makefile.inc file, and change the PROFILE
+variable to either debug or release, and change the PREFIX_RELEASE and
+PREFIX_DEBUG variables to the location where you would like to install
+it to.
 
 Then from a shell enter
 
@@ -10,20 +11,19 @@ Then from a shell enter
      make install
      make clean
 
-Testing and development is still ongoing when I get the time.  Some 
-features are not yet designed, much less implemented.  In particular 
-profile files which will be different from PE2, and undo which will be 
-very different from both PE2 and other traditional editors and hopefully a 
-lot less annoying to use than the traditional undo/redo stack.  There is a 
-manual in progress.  I haven't started on the man page yet - it will 
-be a cut-down version of the manual, and will mostly cover the 
-as-yet-unimplemeented profile system.
+Testing and development is still ongoing when I get the time.  Some
+features are not yet designed, much less implemented.  At the moment
+profile files are similar to PE2, but this is unlikely to persist.
+Undo is currently pretty much nonexistent, and I'm hoping that the
+eventual implementation will be very different from both PE2 and other
+traditional editors and hopefully a lot less annoying to use than the
+traditional undo/redo stack.
 
-POE has been tested on OpenBSD on the Intel x64 processor.  There are 
-many OpenBSD-isms in the codebase.  
+OpenBSD x64 is the primary development target, though POE has been
+tested on OpenBSD (x64, GCC) and FreeBSD (x64, CLANG), and Linux
+(Debian/Raspbian, Raspberry 2).
 
-My priority for porting is:  
-     FreeBSD x64
-     Mac OS X
-     Linux x64
-     Linux Raspberry Pi.  
+My priority for future ports:
+   Linux x64 (probably Debian Wheezy and Slackware 14.1)
+   Mac OS X
+   Microsoft Windows

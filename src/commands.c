@@ -600,7 +600,7 @@ POE_ERR cmd_str(cmd_ctx* ctx)
         safe[i] = ' ';
         hasspace = true;
       }
-	}
+    }
     int insert_mode = view_get_insertmode(view);
     if (insert_mode) {
       int n = strlen(safe);
@@ -611,7 +611,7 @@ POE_ERR cmd_str(cmd_ctx* ctx)
       err = _cmd_right(ctx, strlen(str));
     }
     free(safe);
-	PROFILEPTR profile = buffer_get_profile(buf); 
+    PROFILEPTR profile = buffer_get_profile(buf); 
     if (hasspace && profile->autowrap)
       buffer_wrap_line(buf, row, row, -1, -1, -1, true);
   }
@@ -632,15 +632,13 @@ POE_ERR cmd_insert_text(cmd_ctx* ctx)
     const char* str = next_parm_str(ctx, "");
     char* safe = strsave(str);
     int i;
-    int hasspace = false;
     for (i = 0; safe[i] != '\0'; i++) {
       if (iscntrl(safe[i]) || isspace(safe[i])) {
         safe[i] = ' ';
-        hasspace = true;
       }
-	}
-	int n = strlen(safe);
-	buffer_insertstrn(buf, row, col, str, n, true);
+    }
+    int n = strlen(safe);
+    buffer_insertstrn(buf, row, col, str, n, true);
     free(safe);
   }
   CMD_RETURN(err);
@@ -1193,6 +1191,8 @@ POE_ERR _cmd_upperlower(cmd_ctx* ctx, upperop_t op)
   enum marktype typ;
   int l1, c1, l2, c2;
   POE_ERR err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
+  if (err != POE_ERR_OK)
+    CMD_RETURN(err);
   int i;
   switch (typ) {
   case Marktype_Line:
@@ -1427,15 +1427,16 @@ POE_ERR cmd_copy_mark(cmd_ctx* ctx)
     _savelines_other(buf, row, 2);
     nc = c2-c1+1;
     for (i = 0; i < nl; i++) {
-      buffer_copyinsertchars(buf, row+i, col, markbuf, l1+i, c1, c2-c1+1, true);
+      buffer_copyinsertchars(buf, row+i, col, markbuf, l1+i, c1, nc, true);
     }
     break;
   case Marktype_Char:
     nl = l2-l1+1;
+    nc = c2-c1+1;
     _savelines_other(buf, row, 1);
     if (l1 == l2) {
      //int srclinelen = buffer_line_length(markbuf, l1);
-     buffer_copyinsertchars(buf, row, col, markbuf, l1, c1, c2-c1+1, true);
+     buffer_copyinsertchars(buf, row, col, markbuf, l1, c1, nc, true);
     }
     else if (markbuf != buf || row > l2) {
       // can safely do it the easy way

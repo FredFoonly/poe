@@ -161,7 +161,9 @@ void _testing_catch_sig(int sigraised)
   case SIGILL: signame="SIGILL"; break;
   case SIGTRAP: signame="SIGTRAP"; break;
   case SIGABRT: signame="SIGABRT"; break;
+#if defined(__OpenBSD__) || defined(__FreeBSD__)
   case SIGEMT: signame="SIGEMT"; break;
+#endif
   case SIGFPE: signame="SIGFPE"; break;
   case SIGKILL: signame="SIGKILL"; break;
   case SIGBUS: signame="SIGBUS"; break;
@@ -183,10 +185,14 @@ void _testing_catch_sig(int sigraised)
   case SIGVTALRM: signame="SIGVTALRM"; break;
   case SIGPROF: signame="SIGPROF"; break;
   case SIGWINCH: signame="SIGWINCH"; break;
+#if defined(__OpenBSD__) || defined(__FreeBSD__)
   case SIGINFO: signame="SIGINFO"; break;
+#endif
   case SIGUSR1: signame="SIGUSR1"; break;
   case SIGUSR2: signame="SIGUSR2"; break;
+#if defined(__OpenBSD__) || defined(__FreeBSD__)
   case SIGTHR: signame="SIGTHR"; break;
+#endif
   default: signame = NULL;
   }
   if (signame != NULL) {
