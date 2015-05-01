@@ -21,9 +21,9 @@ traditional undo/redo stack.
 
 OpenBSD x64 is the primary development target, though POE has been
 tested on OpenBSD (x64, GCC) and FreeBSD (x64, CLANG), and Linux
-(Debian/Raspbian, Raspberry 2).
+(Debian/Raspbian Raspberry 2; Ubuntu Vivid Vervet x64 GCC; Slackware
+14.1 x64 GCC).
 
 My priority for future ports:
-   Linux x64 (probably Debian Wheezy and Slackware 14.1)
    Mac OS X
    Microsoft Windows

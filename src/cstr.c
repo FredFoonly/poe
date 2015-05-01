@@ -669,7 +669,7 @@ int cstr_trimleft(struct cstr_t* str, char_pred_t spacepred)
   char* elts = str->elts;
   for (i = 0; i < len && (*spacepred)(elts[i]); i++)
     ;
-  strncpy(str->elts, str->elts+i, len-i+1);
+  memcpy(str->elts, str->elts+i, len-i+1);
   int nchars_removed = i;
   str->ct -= nchars_removed;
   TRACE_RETURN(nchars_removed);
