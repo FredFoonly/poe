@@ -1359,7 +1359,7 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
 	  goto done;
 	  break;
 	default:
-	  //buffer_ensure_min_lines(buf, false);
+	  buffer_ensure_min_lines(buf, false);
 	  err = POE_ERR_CANT_OPEN;
 	  goto done;
 	  break;
@@ -1425,7 +1425,8 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
   buffer_clrflags(buf, BUF_FLG_DIRTY);
   buffer_setflags(buf, BUF_FLG_VISIBLE | flg_rdonly);
   tabs_destroy(&load_tabs);
-  
+  buffer_ensure_min_lines(buf, false);
+
   TRACE_RETURN(err);
 }
 
