@@ -41,9 +41,10 @@ void buffer_must_exist(const char* dbgstr, BUFFER buf);
 bool buffer_exists(BUFFER buf);
 int buffer_count(BUFFER buf);
 int buffer_capacity(BUFFER buf);
-const char* buffer_filename(BUFFER buf);
 const char* buffer_name(BUFFER buf);
 const char* buffer_curr_dirname(BUFFER buf);
+bool buffer_chdir(BUFFER buf, const cstr* new_dirname);
+bool buffer_setbasename(BUFFER buf, const cstr* new_basename); 
 
 void buffer_setflags(BUFFER buf, int flg);
 void buffer_clrflags(BUFFER buf, int flg);
@@ -57,6 +58,7 @@ void buffer_settabs(BUFFER buf, tabstops* tabs);
 PROFILEPTR buffer_get_profile(BUFFER buf);
 void buffer_set_profile(BUFFER buf, PROFILEPTR profile);
 
+void buffer_clear(BUFFER buf, bool ensure_min_lines, bool upd_marks);
 int buffer_nexttab(BUFFER buf, int col);
 int buffer_prevtab(BUFFER buf, int col);
 void buffer_setlineflags(BUFFER pbuf, int line, int flags);
@@ -124,6 +126,8 @@ int buffer_respace(BUFFER buf, int line, char_pred_t spacepred, bool upd_marks);
 
 bool buffer_search(BUFFER buf, int* row, int* col, int* endcol,
 				   const cstr* pat, bool exact, int direction);
+
+void buffer_load_dir_listing(BUFFER buf, const char* dir);
 
 BUFFER buffers_find_named(cstr* name);
 BUFFER buffers_find_eithername(cstr* name);

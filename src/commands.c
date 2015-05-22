@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "trace.h"
 #include "logging.h"
@@ -1893,15 +1894,6 @@ POE_ERR cmd_file(cmd_ctx* ctx)
 }
 
 
-POE_ERR cmd_name(cmd_ctx* ctx)
-{
-  CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
-  logmsg("in cmd_name, unimplemented");
-  POE_ERR err = POE_ERR_OK;
-  CMD_RETURN(err);
-}
-
-
 // options:
 // '-' == search backwards
 // 'e' == force case sensitivity
@@ -2669,6 +2661,58 @@ POE_ERR cmd_set_oncommand(cmd_ctx* ctx)
 }
 
 
+void _dir(BUFFER buf, const char* dirname)
+{
+  TRACE_ENTER;
+  buffer_load_dir_listing(dir_buffer, dirname);
+  buffer_setflags(dir_buffer, BUF_FLG_VISIBLE);
+  wins_cur_switchbuffer(dir_buffer);
+  TRACE_EXIT;
+}
+
+
+POE_ERR cmd_dir(cmd_ctx* ctx)
+{
+  CMD_ENTER(ctx);
+  _dir(ctx->data_buf, buffer_curr_dirname(ctx->data_buf));
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+POE_ERR cmd_cd(cmd_ctx* ctx)
+{
+  CMD_ENTER(ctx);
+  const char* pszDirname = next_parm_str(ctx, (const char*)".");
+  chdir(pszDirname);
+  char achNewDir[PATH_MAX];
+  getcwd(achNewDir, sizeof(achNewDir));
+  if (strncmp(buffer_name(ctx->data_buf), ".DIR", 4) == 0) {
+	_dir(ctx->data_buf, achNewDir);
+  }
+  else {
+	cstr cstr_dirname;
+	cstr_initstr(&cstr_dirname, achNewDir);
+	buffer_chdir(ctx->data_buf, &cstr_dirname);
+	cstr_destroy(&cstr_dirname);
+  }
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
+POE_ERR cmd_name(cmd_ctx* ctx)
+{
+  CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
+  const char* pszName = next_parm_str(ctx, NULL);
+  if (pszName != NULL) {
+	cstr cstr_name;
+	cstr_initstr(&cstr_name, pszName);
+	buffer_setbasename(ctx->data_buf, &cstr_name);
+	cstr_destroy(&cstr_name);
+  }
+  CMD_RETURN(POE_ERR_OK);
+}
+
+
 
 
 ////////////////////////////////////////
@@ -2705,6 +2749,7 @@ void defcmds(void)
   DEFCMD(cmd_bottom_edge,              "BOTTOM",      "EDGE");
   DEFCMD(cmd_bottom,                   "BOTTOM");     
                                                       
+  DEFCMD(cmd_cd,                       "CD");
   DEFCMD(cmd_center_in_margins,        "CENTER",      "IN",      "MARGINS");
   DEFCMD(cmd_center_line,              "CENTER",      "LINE");
   DEFCMD(cmd_change,                   "CHANGE");
@@ -2724,6 +2769,7 @@ void defcmds(void)
   DEFCMD(cmd_delete_char,              "DELETE",      "CHAR");
   DEFCMD(cmd_delete_line,              "DELETE",      "LINE");
   DEFCMD(cmd_delete_mark,              "DELETE",      "MARK");
+  DEFCMD(cmd_dir,                      "DIR");
   DEFCMD(cmd_down,                     "DOWN");       
                                                       
   DEFCMD(cmd_edit,                     "E");
@@ -2759,6 +2805,7 @@ void defcmds(void)
   DEFCMD(cmd_line,                     "LINE");
   DEFCMD(cmd_locate,                   "LOCATE");
   DEFCMD(cmd_lowercase,                "LOWERCASE");
+  DEFCMD(cmd_dir,                      "LS");
                                                       
   DEFCMD(cmd_mark_block,               "MARK",        "BLOCK");
   DEFCMD(cmd_mark_char,                "MARK",        "CHAR");

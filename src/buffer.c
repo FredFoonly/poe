@@ -16,6 +16,8 @@
 #include <limits.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "trace.h"
 #include "logging.h"
@@ -77,6 +79,7 @@ bool _buffer_wrap_single_line(BUFFER buf, int row, int leftmargin, int rightmarg
 
 cstr _buffer_make_unique_name(cstr* name);
 int _buffer_name_exists(cstr* name);
+void _buffer_updatefilename(BUFFER buf);
 
 struct line_t* _line(BUFFER buf, int line);
 void __check_line_exists(const char* dbgname, BUFFER buf, int line);
@@ -356,15 +359,6 @@ int buffer_capacity(BUFFER buf)
 }
 
 
-const char* buffer_filename(BUFFER buf)
-{
-  TRACE_ENTER;
-  VALIDATEBUFFER(buf);
-  const char* rval = cstr_getbufptr(&buf->curr_filename);
-  TRACE_RETURN(rval);
-}
-
-
 const char* buffer_name(BUFFER buf)
 {
   TRACE_ENTER;
@@ -383,6 +377,37 @@ const char* buffer_curr_dirname(BUFFER buf)
 }
 
 
+bool buffer_chdir(BUFFER buf, const cstr* new_dirname)
+{
+  TRACE_ENTER;
+  bool rval = true;
+  cstr_assign(&buf->curr_dirname, new_dirname);
+  buffer_setflags(buf, BUF_FLG_DIRTY);
+  _buffer_updatefilename(buf);
+  TRACE_RETURN(rval);
+}
+
+
+bool buffer_setbasename(BUFFER buf, const cstr* new_basename)
+{
+  TRACE_ENTER;
+  bool rval = true;
+  cstr_assign(&buf->base_buffername, new_basename);
+  buffer_setflags(buf, BUF_FLG_DIRTY);
+  _buffer_updatefilename(buf);
+  TRACE_RETURN(rval);
+}
+
+
+void _buffer_updatefilename(BUFFER buf)
+{
+  cstr tmp;
+  cstr_initfrom(&tmp, &buf->curr_dirname);
+  cstr_append(&tmp, '/');
+  cstr_appendcstr(&tmp, &buf->base_buffername);
+  cstr_assign(&buf->curr_filename, &tmp);
+  cstr_destroy(&tmp);
+}
 int _buffer_isnum(BUFFER buf, int bufnum)
 {
   TRACE_ENTER;
@@ -1311,7 +1336,8 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
   const char* pszFilename = expanded_filename;
   
   // clean out the buffer
-  buffer_removelines(buf, 0, buffer_count(buf), true);
+  //buffer_removelines(buf, 0, buffer_count(buf), true);
+  buffer_clear(buf, false, true);
   
   // Decide on a buffer name (may have to try basename<1>, basename<2>, etc...
   cstr_assignstr(&buf->orig_filename, pszFilename);
@@ -1739,6 +1765,77 @@ bool buffer_search(BUFFER buf, int* prow, int* pcol, int* pendcol, const cstr* p
 	*pendcol = col + cstr_count(pat);
   }
   TRACE_RETURN(found);
+}
+
+
+void buffer_load_dir_listing(BUFFER buf, const char* dirname)
+{
+  TRACE_ENTER;
+  buffer_clear(buf, true, true);
+  // reset the .dir buffer's directory and flags
+  cstr sdirname;
+  cstr_initstr(&sdirname, dirname);
+
+  cstr_assign(&buf->curr_dirname, &sdirname);
+  cstr_assign(&buf->orig_dirname, &sdirname);
+
+  //cstr sbufname;
+  //  cstr_initstr(&sbufname, ".DIR ");
+  //cstr_appendstr(&sbufname, dirname);
+  // cstr_assign(&buf->buffername, &sbufname);
+
+  cstr_destroy(&sdirname);
+  // 
+  DIR* dir = opendir(dirname);
+  if (dir) {
+	struct dirent* d = NULL;
+	int linenum = 0;
+	while ((d = readdir(dir)) != NULL) {
+	  if (d->d_type != DT_REG && d->d_type != DT_DIR)
+		continue;
+	  int filelen = 0;
+	  char* filetype;
+	  char line[MAXNAMLEN+128];
+	  if (d->d_type == DT_REG) {
+		filetype = "FILE";
+		struct stat st; 
+		if (stat(d->d_name, &st) == 0)
+		  filelen = st.st_size;
+	  }
+	  else if (d->d_type == DT_DIR) {
+		filetype = "DIR ";
+	  }
+	  else {
+		filetype = "UNK ";
+	  }
+	  snprintf(line, sizeof(line), "%4s  %10d  %s", filetype, filelen, d->d_name);
+	  int bufct = buffer_count(buf);
+	  if (linenum >= bufct)
+		buffer_appendblanklines(buf, bufct-linenum+1);
+	  buffer_setstrn(buf, linenum, 0, line, strlen(line), false);
+	  ++linenum;
+	}
+  }
+  
+  closedir(dir);
+  buffer_clrflags(buf, BUF_FLG_DIRTY|BUF_FLG_NEW);
+  buffer_setflags(buf, BUF_FLG_RDONLY);
+  TRACE_EXIT;
+}
+
+
+void buffer_clear(BUFFER buf, bool ensure_min_lines, bool upd_marks)
+{
+  TRACE_ENTER;
+  buffer_ensure_min_lines(buf, false);
+  if (ensure_min_lines)	{
+	buffer_removelines(buf, 1, max(0, buffer_count(buf)-1), upd_marks);
+	buffer_removechars(buf, 0, 0, buffer_line_length(buf, 0), upd_marks);
+  }
+  else {
+	buffer_removelines(buf, 0, buffer_count(buf), upd_marks);
+  }
+  TRACE_EXIT;
 }
 
 

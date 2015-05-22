@@ -134,7 +134,7 @@ void cstr_destroy(struct cstr_t* v)
 }
 
 
-void cstr_assign(struct cstr_t* dst, struct cstr_t* src)
+void cstr_assign(struct cstr_t* dst, const struct cstr_t* src)
 {
   TRACE_ENTER;
   cstr_clear(dst);
@@ -143,7 +143,7 @@ void cstr_assign(struct cstr_t* dst, struct cstr_t* src)
 }
 
 
-void cstr_assignn(struct cstr_t* dst, struct cstr_t* src, int i, int n)
+void cstr_assignn(struct cstr_t* dst, const struct cstr_t* src, int i, int n)
 {
   TRACE_ENTER;
 #ifdef DPOE_DBG_LIM

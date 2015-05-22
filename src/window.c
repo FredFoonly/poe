@@ -118,7 +118,7 @@ void _window_stash_view(WINPTR pwin);
 void _window_restore_view(WINPTR pwin);
 void _window_hide_buffer(WINPTR pwin, BUFFER buf);
 
-void  _wins_curr_chdir(void);
+void _wins_curr_chdir(void);
 
 void _wins_repaint_splitters();
 void _win_clr_eol(WINPTR pwin, int scrrow, int scrcol, char c);
@@ -600,44 +600,6 @@ void wins_repaint_all()
 }
 
 
-void _wins_repaint_splitters()
-{
-  bkgdset(' ' | COLOR_PAIR(C_SPLITTERS) | A_SPLITTERS);
-  if (ISMODE0) {
-    // no splitters
-  }
-  else if (ISMODE1) {
-    // draw vertical splitter between v0 and v1
-    WINPTR pv0 = _getwin(__func__, 0);
-    int t0=pv0->t, /*l0=pv0->l,*/ b0=pv0->b, r0=pv0->r;
-    mvvline(t0, r0+1, ACS_VLINE, b0-t0+1);
-  }
-  else if (ISMODE2) {
-    // draw vertical splitter between v0 and v1 (and v2 and v3)
-    // draw horizontal splitter between v0 and v2 (and v1 and v3)
-    WINPTR pv0 = _getwin(__func__, 0);
-    WINPTR pv1 = _getwin(__func__, 1);
-    WINPTR pv2 = _getwin(__func__, 2);
-    WINPTR pv3 = _getwin(__func__, 3);
-    int t0=pv0->t, b0=pv0->b, l0=pv0->l, r0=pv0->r;
-    int /*t1=pv1->t,*/ b1=pv1->b, l1=pv1->l, r1=pv1->r;
-    int t2=pv2->t, b2=pv2->b, /*l2=pv2->l,*/ r2=pv2->r;
-    int t3=pv3->t/*, b3=pv3->b, l3=pv3->l, r3=pv3->r*/;
-    mvvline(t0, r0+1, ACS_VLINE, b0-t0+1); // vertical line between v0 and v1
-    mvvline(t3, r2+1, ACS_VLINE, b2-t2+1); // vertical line between v2 and v3
-    mvhline(b0+1, l0, ACS_HLINE, r0-l0+1); // horizontal line between v0 and v2
-    mvhline(b1+1, l1, ACS_HLINE, r1-l1+1); // horizontal line between v1 and v3
-    mvaddch(b0+1, r0+1, ACS_PLUS);       // plus at the central corner
-  }
-  else if (ISMODE3) {
-    // draw horizontal splitter between v0 and v2
-    WINPTR pv0 = _getwin(__func__, 0);
-    int /*t0=pv0->t,*/ l0=pv0->l, b0=pv0->b, r0=pv0->r+1;
-    mvhline(b0+1, l0, ACS_HLINE, r0-l0+1);
-  }
-}
-
-
 
 
 
@@ -988,6 +950,44 @@ void _log_view_info()
 }
 
 
+void _wins_repaint_splitters()
+{
+  bkgdset(' ' | COLOR_PAIR(C_SPLITTERS) | A_SPLITTERS);
+  if (ISMODE0) {
+    // no splitters
+  }
+  else if (ISMODE1) {
+    // draw vertical splitter between v0 and v1
+    WINPTR pv0 = _getwin(__func__, 0);
+    int t0=pv0->t, /*l0=pv0->l,*/ b0=pv0->b, r0=pv0->r;
+    mvvline(t0, r0+1, ACS_VLINE, b0-t0+1);
+  }
+  else if (ISMODE2) {
+    // draw vertical splitter between v0 and v1 (and v2 and v3)
+    // draw horizontal splitter between v0 and v2 (and v1 and v3)
+    WINPTR pv0 = _getwin(__func__, 0);
+    WINPTR pv1 = _getwin(__func__, 1);
+    WINPTR pv2 = _getwin(__func__, 2);
+    WINPTR pv3 = _getwin(__func__, 3);
+    int t0=pv0->t, b0=pv0->b, l0=pv0->l, r0=pv0->r;
+    int /*t1=pv1->t,*/ b1=pv1->b, l1=pv1->l, r1=pv1->r;
+    int t2=pv2->t, b2=pv2->b, /*l2=pv2->l,*/ r2=pv2->r;
+    int t3=pv3->t/*, b3=pv3->b, l3=pv3->l, r3=pv3->r*/;
+    mvvline(t0, r0+1, ACS_VLINE, b0-t0+1); // vertical line between v0 and v1
+    mvvline(t3, r2+1, ACS_VLINE, b2-t2+1); // vertical line between v2 and v3
+    mvhline(b0+1, l0, ACS_HLINE, r0-l0+1); // horizontal line between v0 and v2
+    mvhline(b1+1, l1, ACS_HLINE, r1-l1+1); // horizontal line between v1 and v3
+    mvaddch(b0+1, r0+1, ACS_PLUS);       // plus at the central corner
+  }
+  else if (ISMODE3) {
+    // draw horizontal splitter between v0 and v2
+    WINPTR pv0 = _getwin(__func__, 0);
+    int /*t0=pv0->t,*/ l0=pv0->l, b0=pv0->b, r0=pv0->r+1;
+    mvhline(b0+1, l0, ACS_HLINE, r0-l0+1);
+  }
+}
+
+
 
 
 #define FILTER_MARK_FLAGS_MASK (0)
@@ -1136,12 +1136,14 @@ void _win_repaint(WINPTR pwin, int slot)
   _win_clr_eol(pwin, pwin->infoline, pwin->l, ' ');
   if (buffer_tstflags(data_buf, BUF_FLG_DIRTY))
     bkgdset(' ' | COLOR_PAIR(C_INFOLINE_MOD) | A_INFOLINE);
-  const char* filename = buffer_filename(data_buf);
   const char* bufname = buffer_name(data_buf);
-  if (filename != NULL && strlen(filename) > 0)
-    mvaddnstr(pwin->infoline, pwin->l, filename, view_wid);
-  else if (bufname != NULL && strlen(bufname) > 0)
+  const char* dirname = buffer_curr_dirname(data_buf);
+  int namecol = 0;
+  if (bufname != NULL && strlen(bufname) > 0) {
+	namecol = strlen(bufname);
     mvaddnstr(pwin->infoline, pwin->l, bufname, view_wid);
+  }
+  mvaddnstr(pwin->infoline, namecol+1, dirname, view_wid);
   if (buffer_tstflags(data_buf, BUF_FLG_DIRTY))
     bkgdset(' ' | COLOR_PAIR(C_INFOLINE) | A_INFOLINE);
   char linenum_info[256];

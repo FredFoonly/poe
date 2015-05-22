@@ -97,7 +97,8 @@ void close_key_interp(void)
 void load_current_key_definitions(BUFFER keys_buffer, PROFILEPTR profile)
 {
   TRACE_ENTER;
-  buffer_removelines(keys_buffer, 0, buffer_count(keys_buffer), false);
+  // buffer_removelines(keys_buffer, 0, buffer_count(keys_buffer), false);
+  buffer_clear(keys_buffer, true, true);
   struct vec_t* pdefs = &profile->key_defs;
   int i, n = vec_count(pdefs);
   logmsg("adding %d definitions to .keydefs", n);
