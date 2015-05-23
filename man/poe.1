@@ -487,6 +487,13 @@ between the margins.  If the line is longer than the inter-margin space,
 then the line will be positioned at the left margin.  
 .SS See also
 \fISET MARGINS\fP
+.SH CD
+.SS Usage
+CD
+.SS Description
+Change the directory for the file that is currently being edited.
+.SS See also
+\fIDIR\fP, \fISAVE\fP, \fIFILE\fP
 .SH CENTER LINE
 .SS Usage
 CENTER LINE
@@ -681,6 +688,14 @@ For Block marks, the marked area on each line is deleted, shifting the
 text to the right of the block over to the leftmost marked column.  
 .SS See also
 \fICOPY MARK\fP, \fIOVERLAY BLOCK\fP, \fIMOVE MARK\fP
+.SH DIR
+.SS Usage
+DIR
+.SS Description
+Loads the contents of the current directory into the ".dir" internal
+file, then makes it the current file for editing.
+.SS See also
+\fICD\fP
 .SH DOWN 
 .SS Usage
 DOWN [<n>]
@@ -1061,9 +1076,9 @@ Shifts the horizontal splitter up by <n> percent.
 NAME <filename>
 .SS Description
 Changes the name of the current file.  This will become the default name 
-for the SAVE or FILE commands.  
+for the \fISAVE\fP or \fIFILE\fP commands.  
 .SS See also
-\fISAVE\fP, \fIFILE\fP
+\fIFILE\fP, \fISAVE\fP
 .SH NEXT FILE
 .SS Usage
 NEXT FILE

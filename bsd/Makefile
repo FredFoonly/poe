@@ -26,7 +26,7 @@ install :
 	$(ECHO) installing to $(PREFIX) .
 	for d in $(DIRS); do (cd $$d; $(MAKE) -f Makefile.bsd install ); done
 	mkdir -p $(PREFIX)/share/poe; cp ../poe.pro $(PREFIX)/share/poe
-	mkdir -p $(PREFIX)/man/man1; gzip -c ../man/poe.1 > $(PREFIX)/man/man1/poe.1.gz
+	mkdir -p $(PREFIX)/man/man1; cp ../man/poe.1 $(PREFIX)/man/man1/poe.1
 
 uninstall :
 	$(ECHO) uninstalling from $(PREFIX) .

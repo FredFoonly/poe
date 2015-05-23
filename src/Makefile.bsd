@@ -13,6 +13,7 @@ test :
 
 $(EXE) : $(OBJS) $(OBJLIBS)
 	$(LD) -o $(EXE) $(OBJS) $(LIBS)
+	$(STRIP) $(EXE) 
 
 clean :
 	$(ECHO) cleaning up in .
