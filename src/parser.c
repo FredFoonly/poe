@@ -117,7 +117,8 @@ POE_ERR parse_cmdline(const cstr* str, pivec* tokens, int* parsepos)
   pivec_clear(tokens);
   POE_ERR err = POE_ERR_OK;
   int pos = 0;
-  cstr tmp;
+  cstr tok, tmp;
+  cstr_init(&tok, 20);
   cstr_initfrom(&tmp, str);
   cstr_trimright(&tmp, poe_iswhitespace);
   cstr_trimleft(&tmp, poe_iswhitespace);
@@ -126,9 +127,6 @@ POE_ERR parse_cmdline(const cstr* str, pivec* tokens, int* parsepos)
     err = POE_ERR_OK;
     goto done;
   }
-
-  cstr tok;
-  cstr_init(&tok, 20);
   
   err = _parse_single_command(&tmp, &tok, &pos, tokens, 0);
 
