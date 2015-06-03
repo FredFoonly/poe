@@ -103,17 +103,17 @@ void load_current_key_definitions(BUFFER keys_buffer, PROFILEPTR profile)
   int i, n = vec_count(pdefs);
   logmsg("adding %d definitions to .keydefs", n);
   for (i = 0; i < n; i++) {
-	struct keydef_t* pkeydef = vec_get(pdefs, i);
-	cstr fmt_seq = format_command_seq(pkeydef->cmds, 0);
-	struct line_t line;
-	line.flags = LINE_FLG_LF|LINE_FLG_DIRTY;
-	cstr_init(&line.txt, 1);
-	cstr_appendstr(&line.txt, "def ");
-	cstr_appendstr(&line.txt, pkeydef->keyname);
-	cstr_appendstr(&line.txt, " = ");
-	cstr_appendstr(&line.txt, cstr_getbufptr(&fmt_seq));
-	cstr_destroy(&fmt_seq);
-	buffer_appendline(keys_buffer, &line);
+    struct keydef_t* pkeydef = vec_get(pdefs, i);
+    cstr fmt_seq = format_command_seq(pkeydef->cmds, 0);
+    struct line_t line;
+    line.flags = LINE_FLG_LF|LINE_FLG_DIRTY;
+    cstr_init(&line.txt, 1);
+    cstr_appendstr(&line.txt, "def ");
+    cstr_appendstr(&line.txt, pkeydef->keyname);
+    cstr_appendstr(&line.txt, " = ");
+    cstr_appendstr(&line.txt, cstr_getbufptr(&fmt_seq));
+    cstr_destroy(&fmt_seq);
+    buffer_appendline(keys_buffer, &line);
   }
   TRACE_EXIT;
 }
@@ -125,15 +125,15 @@ int _find_subcmd(const char* cmd, pivec* cmds, int pc)
   int rval = -1;
   int ncmds = pivec_count(cmds);
   while (pc < ncmds-1 && !END_OF_CMDSEQ(cmds, pc)) {
-	if (CMD_IS_STR(pivec_get(cmds, pc)) && 
-		(strcasecmp(CMD_STRVAL(pivec_get(cmds, pc)), cmd) == 0)) {
-	  rval = pc;
-	  break;
-	}
-	// skip to next command in list
-	while (pc < ncmds && !END_OF_CMD(cmds, pc))
-	  pc++;
-	pc++;
+    if (CMD_IS_STR(pivec_get(cmds, pc)) && 
+        (strcasecmp(CMD_STRVAL(pivec_get(cmds, pc)), cmd) == 0)) {
+      rval = pc;
+      break;
+    }
+    // skip to next command in list
+    while (pc < ncmds && !END_OF_CMD(cmds, pc))
+      pc++;
+    pc++;
   }
   TRACE_RETURN(rval);
 }
@@ -154,11 +154,11 @@ POE_ERR translate_insertable_key(const char* keyname, char* pchr)
   pivec* cmds = keydef->cmds;
   int chr_pc = _find_subcmd("CHAR", cmds, 0);
   if (chr_pc < 0)
-	TRACE_RETURN(POE_ERR_INVALID_KEY);
+    TRACE_RETURN(POE_ERR_INVALID_KEY);
   if (END_OF_CMD(cmds, chr_pc+1))
-  	TRACE_RETURN(POE_ERR_INVALID_KEY);
+    TRACE_RETURN(POE_ERR_INVALID_KEY);
   if (!CMD_IS_INT(pivec_get(cmds, chr_pc+1)))
-  	TRACE_RETURN(POE_ERR_INVALID_KEY);
+    TRACE_RETURN(POE_ERR_INVALID_KEY);
   *pchr = (char)(CMD_INTVAL(pivec_get(cmds, chr_pc+1)));
   TRACE_RETURN(POE_ERR_OK);
 }
@@ -183,11 +183,11 @@ bool is_confirm_key(const char* keyname)
   pivec* cmds = keydef->cmds;
   int conf_pc = _find_subcmd("CONFIRM", cmds, 0);
   if (conf_pc < 0)
-	TRACE_RETURN(false);
+    TRACE_RETURN(false);
   if (END_OF_CMD(cmds, conf_pc+1))
-  	TRACE_RETURN(POE_ERR_INVALID_KEY);
+    TRACE_RETURN(POE_ERR_INVALID_KEY);
   if (!CMD_IS_INT(pivec_get(cmds, conf_pc+1)))
-  	TRACE_RETURN(POE_ERR_INVALID_KEY);
+    TRACE_RETURN(POE_ERR_INVALID_KEY);
   if (END_OF_CMD(cmds, conf_pc+1))
     TRACE_RETURN(false);
   if (!CMD_IS_STR(pivec_get(cmds, conf_pc+1)))
@@ -209,17 +209,17 @@ POE_ERR get_key_def(BUFFER buf, cstr* fmtted_def, const char* keyname)
   strupr(ucKeyname);
   struct keydef_t* keydef = find_keydef(prof, ucKeyname);
   if (keydef == NULL) {
-	err = POE_ERR_INVALID_KEY;
+    err = POE_ERR_INVALID_KEY;
   }
   else {
-	cstr fmt_seq = format_command_seq(keydef->cmds, 0);
-	cstr_clear(fmtted_def);
-	cstr_appendstr(fmtted_def, "def ");
-	cstr_appendstr(fmtted_def, keyname);
-	cstr_appendstr(fmtted_def, " = ");
-	cstr_appendstr(fmtted_def, cstr_getbufptr(&fmt_seq));
-	cstr_destroy(&fmt_seq);
-	err = POE_ERR_OK;
+    cstr fmt_seq = format_command_seq(keydef->cmds, 0);
+    cstr_clear(fmtted_def);
+    cstr_appendstr(fmtted_def, "def ");
+    cstr_appendstr(fmtted_def, keyname);
+    cstr_appendstr(fmtted_def, " = ");
+    cstr_appendstr(fmtted_def, cstr_getbufptr(&fmt_seq));
+    cstr_destroy(&fmt_seq);
+    err = POE_ERR_OK;
   }
   TRACE_RETURN(err);
 }
@@ -237,49 +237,49 @@ POE_ERR wins_handle_key(const char* keyname)
   char ucKeyname[MAX_KEYNAME_LEN];
   struct keydef_t* keydef = NULL;
   if (buffer_tstflags(ctx.targ_buf, BUF_FLG_CMDLINE)) {
-	// first check cmd-ins/repl-keyname
-	memset(ucKeyname, 0, sizeof(ucKeyname));
-	if (buffer_tstflags(ctx.targ_buf, BUF_FLG_CMDLINE))
-	  strlcat(ucKeyname, "CMD-", sizeof(ucKeyname));
-	if (view_tstflags(ctx.targ_view, VIEW_FLG_INSERTMODE))
-	  strlcat(ucKeyname, "INS-", sizeof(ucKeyname));
-	else
-	  strlcat(ucKeyname, "REP-", sizeof(ucKeyname));
-	strlcat(ucKeyname, keyname, sizeof(ucKeyname));
-	strupr(ucKeyname);
-	//logmsg("trying to look up key '%s'", ucKeyname);
-	keydef = find_keydef(prof, ucKeyname);
+    // first check cmd-ins/repl-keyname
+    memset(ucKeyname, 0, sizeof(ucKeyname));
+    if (buffer_tstflags(ctx.targ_buf, BUF_FLG_CMDLINE))
+      strlcat(ucKeyname, "CMD-", sizeof(ucKeyname));
+    if (view_tstflags(ctx.targ_view, VIEW_FLG_INSERTMODE))
+      strlcat(ucKeyname, "INS-", sizeof(ucKeyname));
+    else
+      strlcat(ucKeyname, "REP-", sizeof(ucKeyname));
+    strlcat(ucKeyname, keyname, sizeof(ucKeyname));
+    strupr(ucKeyname);
+    //logmsg("trying to look up key '%s'", ucKeyname);
+    keydef = find_keydef(prof, ucKeyname);
 
-	if (keydef == NULL) {
-	  // then check cmd-keyname
-	  memset(ucKeyname, 0, sizeof(ucKeyname));
-	  if (buffer_tstflags(ctx.targ_buf, BUF_FLG_CMDLINE))
-		strlcat(ucKeyname, "CMD-", sizeof(ucKeyname));
-	  strlcat(ucKeyname, keyname, sizeof(ucKeyname));
-	  strupr(ucKeyname);
-	  //logmsg("trying to look up key '%s'", ucKeyname);
-	  keydef = find_keydef(prof, ucKeyname);
-	}
+    if (keydef == NULL) {
+      // then check cmd-keyname
+      memset(ucKeyname, 0, sizeof(ucKeyname));
+      if (buffer_tstflags(ctx.targ_buf, BUF_FLG_CMDLINE))
+            strlcat(ucKeyname, "CMD-", sizeof(ucKeyname));
+      strlcat(ucKeyname, keyname, sizeof(ucKeyname));
+      strupr(ucKeyname);
+      //logmsg("trying to look up key '%s'", ucKeyname);
+      keydef = find_keydef(prof, ucKeyname);
+    }
   }
   else {
-	// first check ins/repl-keyname
-	memset(ucKeyname, 0, sizeof(ucKeyname));
-	if (view_tstflags(ctx.targ_view, VIEW_FLG_INSERTMODE))
-	  strlcat(ucKeyname, "INS-", sizeof(ucKeyname));
-	else
-	  strlcat(ucKeyname, "REP-", sizeof(ucKeyname));
-	strlcat(ucKeyname, keyname, sizeof(ucKeyname));
-	strupr(ucKeyname);
-	//logmsg("trying to look up key '%s'", ucKeyname);
-	keydef = find_keydef(prof, ucKeyname);
+    // first check ins/repl-keyname
+    memset(ucKeyname, 0, sizeof(ucKeyname));
+    if (view_tstflags(ctx.targ_view, VIEW_FLG_INSERTMODE))
+      strlcat(ucKeyname, "INS-", sizeof(ucKeyname));
+    else
+      strlcat(ucKeyname, "REP-", sizeof(ucKeyname));
+    strlcat(ucKeyname, keyname, sizeof(ucKeyname));
+    strupr(ucKeyname);
+    //logmsg("trying to look up key '%s'", ucKeyname);
+    keydef = find_keydef(prof, ucKeyname);
   }
   
   if (keydef == NULL) {
-	// then just try the keyname
-	strlcpy(ucKeyname, keyname, sizeof(ucKeyname));
-	strupr(ucKeyname);
-	//logmsg("finally try to look up key '%s'", ucKeyname);
-	keydef = find_keydef(prof, ucKeyname);
+    // then just try the keyname
+    strlcpy(ucKeyname, keyname, sizeof(ucKeyname));
+    strupr(ucKeyname);
+    //logmsg("finally try to look up key '%s'", ucKeyname);
+    keydef = find_keydef(prof, ucKeyname);
   }
 
   //struct keydef_t* keydef = find_keydef(prof, ucKeyname);
@@ -301,11 +301,11 @@ POE_ERR wins_handle_key(const char* keyname)
     kbd_ctx.cmdseq = keydef->cmds;
     kbd_ctx.pc = 0;
     err = interpret_command_seq(&kbd_ctx);
-	
+        
     if (update_context(&kbd_ctx)) {
-	  view_move_cursor_to(kbd_ctx.data_view, kbd_ctx.data_row, kbd_ctx.data_col);
-	  view_move_cursor_to(kbd_ctx.cmd_view, kbd_ctx.cmd_row, kbd_ctx.cmd_col);
-	}
+      view_move_cursor_to(kbd_ctx.data_view, kbd_ctx.data_row, kbd_ctx.data_col);
+      view_move_cursor_to(kbd_ctx.cmd_view, kbd_ctx.cmd_row, kbd_ctx.cmd_col);
+    }
   }
   TRACE_RETURN(err);
 }
@@ -326,25 +326,25 @@ struct keydef_t* _find_keydef(PROFILEPTR prof, const char* keyname)
   TRACE_ENTER;
   //logmsg("looking up key '%s' in profile '%s'", keyname, cstr_getbufptr(&prof->name));
   if (prof == NULL)
-	TRACE_RETURN(NULL);
+    TRACE_RETURN(NULL);
   if (prof->keydefs_sorted) {
-	struct keydef_t srchkey;
-	srchkey.keyname = keyname;
-	srchkey.cmds = NULL;
-	void* found = bsearch(&srchkey,
-						  vec_getbufptr(&prof->key_defs),
-						  vec_count(&prof->key_defs),
-						  sizeof(struct keydef_t),
-						  compare_keydefs_keyname);
-	TRACE_RETURN((struct keydef_t*)found);
+    struct keydef_t srchkey;
+    srchkey.keyname = keyname;
+    srchkey.cmds = NULL;
+    void* found = bsearch(&srchkey,
+                          vec_getbufptr(&prof->key_defs),
+                          vec_count(&prof->key_defs),
+                          sizeof(struct keydef_t),
+                          compare_keydefs_keyname);
+    TRACE_RETURN((struct keydef_t*)found);
   }
   else {
-	int i, n = vec_count(&prof->key_defs);
-	for (i = 0; i < n; i++) {
-	  struct keydef_t* pkeydef = vec_get(&prof->key_defs, i);
-	  if (strcmp(pkeydef->keyname, keyname) == 0)
-		TRACE_RETURN(pkeydef);
-	}
+    int i, n = vec_count(&prof->key_defs);
+    for (i = 0; i < n; i++) {
+      struct keydef_t* pkeydef = vec_get(&prof->key_defs, i);
+      if (strcmp(pkeydef->keyname, keyname) == 0)
+        TRACE_RETURN(pkeydef);
+    }
   }
   TRACE_RETURN(NULL);
 }
@@ -354,11 +354,11 @@ void sort_profile_keydefs(PROFILEPTR prof)
 {
   TRACE_ENTER;
   if (prof->keydefs_sorted)
-	TRACE_EXIT;
+    TRACE_EXIT;
   qsort(vec_getbufptr(&prof->key_defs),
-		vec_count(&prof->key_defs),
-		sizeof(struct keydef_t),
-		compare_keydefs_keyname);
+        vec_count(&prof->key_defs),
+        sizeof(struct keydef_t),
+        compare_keydefs_keyname);
   prof->keydefs_sorted = true;
   TRACE_EXIT;
 }
@@ -393,8 +393,8 @@ void defkey(PROFILEPTR prof, const char* keyname, const intptr_t* cmds, size_t n
     newkeydef.keyname = ucKeyname;
     newkeydef.cmds = _save_cmds(cmds, ncmds);
     vec_append(&prof->key_defs, &newkeydef);
-	if (prof->keydefs_sorted)
-	  sort_profile_keydefs(prof);
+    if (prof->keydefs_sorted)
+      sort_profile_keydefs(prof);
   }
   TRACE_EXIT;
 }
@@ -409,6 +409,4 @@ pivec* _save_cmds(const intptr_t* cmds, size_t n)
     pivec_append(saved, cmds[i]);
   TRACE_RETURN(saved);
 }
-
-
 

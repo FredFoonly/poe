@@ -58,25 +58,25 @@ void set_default_profile(void)
   DEFKEY(default_profile, "BACKSPACE", CMD_STR("RUBOUT"));
   DEFKEY(default_profile, "ESC", CMD_STR("COMMAND"), CMD_STR("TOGGLE"));
   DEFKEY(default_profile, "ENTER",
-		 CMD_STR("BEGIN"), CMD_STR("LINE"), CMD_SEP,
-		 CMD_STR("DOWN"), CMD_SEP,
-		 CMD_STR("INDENT"));
+         CMD_STR("BEGIN"), CMD_STR("LINE"), CMD_SEP,
+         CMD_STR("DOWN"), CMD_SEP,
+         CMD_STR("INDENT"));
   DEFKEY(default_profile, "CMD-ENTER", CMD_STR("EXECUTE"));
   char kname[4];
   intptr_t cmds[4];
   cmds[0] = CMD_STR("CHAR"); cmds[2] = CMD_SEP; cmds[3] = CMD_NULL;
   int i;
   for (i = 'A'; i <= 'Z'; i++) {
-  	if (i == 'y') {
-  	  DEFKEY(default_profile, "Y", CMD_STR("CONFIRM"), CMD_STR("CHANGE"), CMD_SEP, CMD_STR("CHAR"), CMD_INT('y'));
-  	  DEFKEY(default_profile, "S-Y", CMD_STR("CONFIRM"), CMD_STR("CHANGE"), CMD_SEP, CMD_STR("CHAR"), CMD_INT('Y'));
-  	}
-  	else {
-  	  kname[0] = i; kname[1] = '\0'; cmds[1] = CMD_INT(tolower(i));
-  	  defkey(default_profile, kname, cmds, 4);
-  	  kname[0] = 'S'; kname[1] = '-'; kname[2] = i; kname[3] = '\0'; cmds[1] = CMD_INT(tolower(i));
-  	  defkey(default_profile, kname, cmds, 4);
-  	}
+    if (i == 'y') {
+      DEFKEY(default_profile, "Y", CMD_STR("CONFIRM"), CMD_STR("CHANGE"), CMD_SEP, CMD_STR("CHAR"), CMD_INT('y'));
+      DEFKEY(default_profile, "S-Y", CMD_STR("CONFIRM"), CMD_STR("CHANGE"), CMD_SEP, CMD_STR("CHAR"), CMD_INT('Y'));
+    }
+    else {
+      kname[0] = i; kname[1] = '\0'; cmds[1] = CMD_INT(tolower(i));
+      defkey(default_profile, kname, cmds, 4);
+      kname[0] = 'S'; kname[1] = '-'; kname[2] = i; kname[3] = '\0'; cmds[1] = CMD_INT(tolower(i));
+      defkey(default_profile, kname, cmds, 4);
+    }
   }
   DEFKEY(default_profile, "0", CMD_STR("CHAR"), CMD_INT('0'));
   DEFKEY(default_profile, "1", CMD_STR("CHAR"), CMD_INT('1'));

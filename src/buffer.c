@@ -69,12 +69,12 @@ int _next_bufnum;
 
 
 void _buffer_init(BUFFER buf, const char* buffer_name, int flags, int capacity,
-				  PROFILEPTR profile);
+                  PROFILEPTR profile);
 void _buffer_free(BUFFER buf);
 void _buffer_destroy(BUFFER buf);
 void __buffer_copyinsertlines(BUFFER dstbuf, int di,
-							  BUFFER srcbuf, int si,
-							  int n);
+                              BUFFER srcbuf, int si,
+                              int n);
 bool _buffer_wrap_single_line(BUFFER buf, int row, int leftmargin, int rightmargin, bool update_marks);
 
 cstr _buffer_make_unique_name(cstr* name);
@@ -145,8 +145,8 @@ void shutdown_buffer()
   TRACE_ENTER;
   int i, n = pivec_count(&_all_buffers);
   for (i = 0; i < n; i++) {
-	BUFFER buf = (BUFFER)pivec_get(&_all_buffers, i);
-	_buffer_free(buf);
+    BUFFER buf = (BUFFER)pivec_get(&_all_buffers, i);
+    _buffer_free(buf);
   }
   pivec_destroy(&_all_buffers);
   TRACE_EXIT;
@@ -167,9 +167,9 @@ int visible_buffers_count()
   int i, n = pivec_count(&_all_buffers);
   int visible_count = 0;
   for (i = 0; i < n; i++) {
-	BUFFER buf = (BUFFER)pivec_get(&_all_buffers, i);
-	if (buffer_tstflags(buf, BUF_FLG_VISIBLE))
-	  ++visible_count;
+    BUFFER buf = (BUFFER)pivec_get(&_all_buffers, i);
+    if (buffer_tstflags(buf, BUF_FLG_VISIBLE))
+      ++visible_count;
   }
   TRACE_RETURN(visible_count);
 }
@@ -183,16 +183,13 @@ BUFFER buffers_next(BUFFER buf)
   int start = i;
   int nbuffers = buffers_count();
   if (nbuffers > 0 || i < 0) {
-	if (buf == BUFFER_NULL)
-	  i = nbuffers-1;
-	// keep scanning until we find a visible buffer.
-	do {
-	  i = (i+1) % nbuffers;
-	  nextbuf = (BUFFER)pivec_get(&_all_buffers, i);
-	  /* logmsg("nextbuf buffer '%s' visible = %d", */
-	  /*              buffer_name(nextbuf), */
-	  /*              buffer_tstflags(nextbuf, BUF_FLG_VISIBLE)); */
-	} while (!buffer_tstflags(nextbuf, BUF_FLG_VISIBLE) && i != start);
+		if (buf == BUFFER_NULL)
+			i = nbuffers-1;
+		// keep scanning until we find a visible buffer.
+		do {
+			i = (i+1) % nbuffers;
+			nextbuf = (BUFFER)pivec_get(&_all_buffers, i);
+    } while (!buffer_tstflags(nextbuf, BUF_FLG_VISIBLE) && i != start);
   }
   TRACE_RETURN(nextbuf);
 }
@@ -203,9 +200,9 @@ void buffers_switch_profiles(PROFILEPTR newprofile, PROFILEPTR oldprofile)
   TRACE_ENTER;
   int i, n = buffers_count();
   for (i = 0; i < n; i++) {
-	BUFFER buf = (BUFFER)pivec_get(&_all_buffers, i);
-	if (buffer_get_profile(buf) == oldprofile)
-	  buffer_set_profile(buf, newprofile);
+    BUFFER buf = (BUFFER)pivec_get(&_all_buffers, i);
+    if (buffer_get_profile(buf) == oldprofile)
+      buffer_set_profile(buf, newprofile);
   }
   TRACE_EXIT;
 }
@@ -214,10 +211,10 @@ void buffers_switch_profiles(PROFILEPTR newprofile, PROFILEPTR oldprofile)
 void _validatebufptr(const char* dbg, BUFFER buf)
 {
   if (buf == NULL) {
-	poe_err(1, "%s Attempted to use a null buffer.", dbg);
+    poe_err(1, "%s Attempted to use a null buffer.", dbg);
   }
   if (buf->_sig != BUF_SIG) {
-	poe_err(1, "%s Attempted to use an invalid buffer.", dbg);
+    poe_err(1, "%s Attempted to use an invalid buffer.", dbg);
   }
 }
 
@@ -230,7 +227,7 @@ void _validatebufptr(const char* dbg, BUFFER buf)
 
 
 BUFFER buffer_alloc(const char* buffer_name, int flags, int capacity,
-					PROFILEPTR profile)
+                    PROFILEPTR profile)
 {
   TRACE_ENTER;
   BUFFER buf = (BUFFER)calloc(1, sizeof(struct buffer_t));
@@ -247,7 +244,7 @@ void buffer_free(BUFFER buf)
   VALIDATEBUFFER(buf);
   int i = __find_buffer(buf);
   if (i < 0)
-	poe_err(POE_ERR_NOT_FOUND, "%s: buffer %d not found", __func__, buf->bufnum);
+    poe_err(POE_ERR_NOT_FOUND, "%s: buffer %d not found", __func__, buf->bufnum);
   pivec_remove(&_all_buffers, i);
   _buffer_free(buf);
   TRACE_EXIT;
@@ -268,7 +265,7 @@ bool buffer_exists(BUFFER buf)
 {
   TRACE_ENTER;
   if (buf == NULL)
-	TRACE_RETURN(false);
+    TRACE_RETURN(false);
   int i = __find_buffer(buf);
   TRACE_RETURN(i >= 0 && buf->_sig == BUF_SIG);
 }
@@ -278,7 +275,7 @@ void buffer_must_exist(const char* dbgstr, BUFFER buf)
 {
   TRACE_ENTER;
   if (!buffer_exists(buf))
-	poe_err(1, "%s error: buffer %d not found", dbgstr, buf->bufnum);
+    poe_err(1, "%s error: buffer %d not found", dbgstr, buf->bufnum);
   VALIDATEBUFFER(buf);
   TRACE_EXIT;
 }
@@ -286,7 +283,7 @@ void buffer_must_exist(const char* dbgstr, BUFFER buf)
 
 
 void _buffer_init(BUFFER buf, const char* buffer_name, int flags, int capacity,
-				  PROFILEPTR profile)
+                  PROFILEPTR profile)
 {
   TRACE_ENTER;
   capacity = max(capacity, 0);
@@ -303,12 +300,12 @@ void _buffer_init(BUFFER buf, const char* buffer_name, int flags, int capacity,
   getcwd(tmp_cwd, sizeof(tmp_cwd));
   cstr_initstr(&buf->curr_dirname, tmp_cwd);
   if (profile == NULL) {
-	margins_init(&buf->margins, 0, 255, 0);
-	tabs_init(&buf->tabstops, 0, 8, NULL);
+    margins_init(&buf->margins, 0, 255, 0);
+    tabs_init(&buf->tabstops, 0, 8, NULL);
   }
   else {
-	margins_initfrom(&buf->margins, &profile->default_margins);
-	tabs_initfrom(&buf->tabstops, &profile->default_tabstops);
+    margins_initfrom(&buf->margins, &profile->default_margins);
+    tabs_initfrom(&buf->tabstops, &profile->default_tabstops);
   }
   buf->longest_line = 0;
   /* if (flags & BUF_FLG_CMDLINE) */
@@ -328,7 +325,7 @@ void _buffer_destroy(BUFFER buf)
   mark_free_marks_in_buffer(buf);
   int i ,n = vec_count(&buf->lines);
   for (i = 0; i < n; i++) {
-	__line_destroy(_line(buf, i));
+    __line_destroy(_line(buf, i));
   }
   vec_destroy(&buf->lines);
   cstr_destroy(&buf->orig_filename);
@@ -541,7 +538,7 @@ void buffer_setlineflags(BUFFER buf, int line, int flags)
   __check_line_exists(__func__, buf, line);
   _line(buf, line)->flags |= flags;
   if (flags & LINE_FLG_DIRTY)
-	buffer_setflags(buf, BUF_FLG_DIRTY);
+    buffer_setflags(buf, BUF_FLG_DIRTY);
   TRACE_EXIT;
 }
 
@@ -553,9 +550,9 @@ void buffer_setlinesflags(BUFFER buf, int line, int n, int flags)
   int i;
   __check_lines_exist(__func__, buf, line, n);
   for (i = 0; i < n; i++)
-	_line(buf, line+i)->flags |= flags;
+    _line(buf, line+i)->flags |= flags;
   if (flags & LINE_FLG_DIRTY)
-	buffer_setflags(buf, BUF_FLG_DIRTY);
+    buffer_setflags(buf, BUF_FLG_DIRTY);
   TRACE_EXIT;
 }
 
@@ -608,9 +605,9 @@ bool buffer_isblankline(BUFFER buf, int line)
   int i = buffer_scantill_nowrap(buf, line, 0, 1, poe_isnotwhitespace);
   int rval = i >= buffer_line_length(buf, line);
   if (!rval) {
-	char c = buffer_getchar(buf, line, i);
-	if (c == '.')
-	  rval = true;
+    char c = buffer_getchar(buf, line, i);
+    if (c == '.')
+      rval = true;
   }
   TRACE_RETURN(rval);
 }
@@ -622,14 +619,14 @@ int buffer_findblankline(BUFFER buf, int row, int direction)
   direction = (direction < 0) ? -1 : 1;
   int i=row, nrows = buffer_count(buf);
   if (row < 0 || row >= nrows)
-	TRACE_RETURN(row);
+    TRACE_RETURN(row);
   if (direction > 0) {
-	for (i = row; i < nrows && !buffer_isblankline(buf, i); i++)
-	  ;
+    for (i = row; i < nrows && !buffer_isblankline(buf, i); i++)
+      ;
   }
   else if (direction < 0) {
-	for (i = row; i > 0 && !buffer_isblankline(buf, i); i--)
-	  ;
+    for (i = row; i > 0 && !buffer_isblankline(buf, i); i--)
+      ;
   }
   TRACE_RETURN(i);
 }
@@ -644,12 +641,12 @@ bool buffer_isparagraphsep(BUFFER buf, int line)
   int i = buffer_scantill_nowrap(buf, line, 0, 1, poe_isnotwhitespace);
   int rval = false;
   if (i >= buffer_line_length(buf, line)) {
-	rval = true;
+    rval = true;
   }
   else {
-	char c = buffer_getchar(buf, line, i);
-	if (c == '.' || c == '<' || c == '>' || c == '*' || c == '/' || c == '+' || c == '-' || c == '[' || c == ']')
-	  rval = true;
+    char c = buffer_getchar(buf, line, i);
+    if (c == '.' || c == '<' || c == '>' || c == '*' || c == '/' || c == '+' || c == '-' || c == '[' || c == ']')
+      rval = true;
   }
   TRACE_RETURN(rval);
 }
@@ -661,14 +658,14 @@ int buffer_findparagraphsep(BUFFER buf, int row, int direction)
   direction = (direction < 0) ? -1 : 1;
   int i=row, nrows = buffer_count(buf);
   if (row < 0 || row >= nrows)
-	TRACE_RETURN(row);
+    TRACE_RETURN(row);
   if (direction > 0) {
-	for (i = row; i < nrows && !buffer_isparagraphsep(buf, i); i++)
-	  ;
+    for (i = row; i < nrows && !buffer_isparagraphsep(buf, i); i++)
+      ;
   }
   else if (direction < 0) {
-	for (i = row; i > 0 && !buffer_isparagraphsep(buf, i); i--)
-	  ;
+    for (i = row; i > 0 && !buffer_isparagraphsep(buf, i); i--)
+      ;
   }
   TRACE_RETURN(i);
 }
@@ -680,14 +677,14 @@ int buffer_findnonparagraphsep(BUFFER buf, int row, int direction)
   direction = (direction < 0) ? -1 : 1;
   int i=row, nrows = buffer_count(buf);
   if (row < 0 || row >= nrows)
-	TRACE_RETURN(row);
+    TRACE_RETURN(row);
   if (direction > 0) {
-	for (i = row; i < nrows && buffer_isparagraphsep(buf, i); i++)
-	  ;
+    for (i = row; i < nrows && buffer_isparagraphsep(buf, i); i++)
+      ;
   }
   else if (direction < 0) {
-	for (i = row; i > 0 && buffer_isparagraphsep(buf, i); i--)
-	  ;
+    for (i = row; i > 0 && buffer_isparagraphsep(buf, i); i--)
+      ;
   }
   TRACE_RETURN(i);
 }
@@ -703,16 +700,16 @@ int buffer_scantill_nowrap(BUFFER buf, int line, int col, int direction, char_te
   const char* s = cstr_getbufptr(&pline->txt);
   int i = 0;
   if (direction == -1) {
-	if (col < 0)
-	  TRACE_RETURN(-1);
-	for (i = col; i >= 0 && !(*testf)(s[i]); i--)
-	  ;
+    if (col < 0)
+      TRACE_RETURN(-1);
+    for (i = col; i >= 0 && !(*testf)(s[i]); i--)
+      ;
   }
   else if (direction == 1) {
-	if (col >= len)
-	  TRACE_RETURN(len);
-	for (i = col; i < len && s[i] != '\0' && !(*testf)(s[i]); i++)
-	  ;
+    if (col >= len)
+      TRACE_RETURN(len);
+    for (i = col; i < len && s[i] != '\0' && !(*testf)(s[i]); i++)
+      ;
   }
   TRACE_RETURN(i);
 }
@@ -725,13 +722,13 @@ bool buffer_left_wrap(BUFFER buf, int* pline, int* pcol)
   int line = *pline, col = *pcol;
   __check_line_exists(__func__, buf, line);
   if (line == 0 && col == 0)
-	TRACE_RETURN(false);
+    TRACE_RETURN(false);
   if (col == 0) {
-	line--;
-	col = buffer_line_length(buf, line);
+    line--;
+    col = buffer_line_length(buf, line);
   }
   else {
-	col--;
+    col--;
   }
   *pline = line;
   *pcol = col;
@@ -748,13 +745,13 @@ bool buffer_right_wrap(BUFFER buf, int* pline, int* pcol)
   int nlines = buffer_count(buf);
   int linelen = buffer_line_length(buf, line);
   if (line == nlines-1 && col >= linelen)
-	TRACE_RETURN(false);
+    TRACE_RETURN(false);
   if (col >= linelen) {
-	line++;
-	col = 0;
+    line++;
+    col = 0;
   }
   else {
-	col++;
+    col++;
   }
   *pline = line;
   *pcol = col;
@@ -770,14 +767,14 @@ void buffer_scantill_wrap(BUFFER buf, int* pline, int* pcol, int direction, char
   __check_line_exists(__func__, buf, line);
   bool scan = true;
   if (direction == -1) {
-	while (scan && !(*testf)(buffer_getchar(buf, line, col))) {
-	  scan = buffer_left_wrap(buf, &line, &col);
-	}
+    while (scan && !(*testf)(buffer_getchar(buf, line, col))) {
+      scan = buffer_left_wrap(buf, &line, &col);
+    }
   }
   else if (direction == 1) {
-	while (scan && !(*testf)(buffer_getchar(buf, line, col))) {
-	  scan = buffer_right_wrap(buf, &line, &col);
-	}
+    while (scan && !(*testf)(buffer_getchar(buf, line, col))) {
+      scan = buffer_right_wrap(buf, &line, &col);
+    }
   }
   *pline = line;
   *pcol = col;
@@ -793,7 +790,7 @@ bool buffer_trimleft(BUFFER buf, int row, bool upd_marks)
   struct line_t* line = buffer_get(buf, row);
   int nchars = cstr_trimleft(&line->txt, poe_iswhitespace);
   if (upd_marks && nchars > 0)
-	marks_upd_removedchars(buf, row, 0, nchars);
+    marks_upd_removedchars(buf, row, 0, nchars);
   buffer_setlineflags(buf, row, LINE_FLG_DIRTY);
   TRACE_RETURN(nchars > 0);
 }
@@ -807,7 +804,7 @@ bool buffer_trimright(BUFFER buf, int row, bool upd_marks)
   struct line_t* line = buffer_get(buf, row);
   int nchars = cstr_trimright(&line->txt, poe_iswhitespace);
   if (upd_marks && nchars > 0)
-	marks_upd_removedchars(buf, row, cstr_count(&line->txt), nchars);
+    marks_upd_removedchars(buf, row, cstr_count(&line->txt), nchars);
   buffer_setlineflags(buf, row, LINE_FLG_DIRTY);
   TRACE_RETURN(nchars > 0);
 }
@@ -828,12 +825,12 @@ void buffer_setcstr(BUFFER buf, int line, struct cstr_t* a)
 void buffer_ensure_min_lines(BUFFER buf, bool upd_dirty)
 {
   if (buffer_count(buf) == 0) {
-	bool wasdirty = buffer_tstflags(buf, BUF_FLG_DIRTY);
-	_expand_to_line(buf, 0);
-	if (!upd_dirty && !wasdirty)
-	  buffer_clrflags(buf, BUF_FLG_DIRTY);
-	else
-	  trace_stack_print();
+    bool wasdirty = buffer_tstflags(buf, BUF_FLG_DIRTY);
+    _expand_to_line(buf, 0);
+    if (!upd_dirty && !wasdirty)
+      buffer_clrflags(buf, BUF_FLG_DIRTY);
+    else
+      trace_stack_print();
   }
 }
 
@@ -858,7 +855,7 @@ int buffer_appendblanklines(BUFFER buf, int n)
   VALIDATEBUFFER(buf);
   int i, rval = 0;
   for (i = 0; i < n; i++)
-	rval = buffer_appendline(buf, &_blankline);
+    rval = buffer_appendline(buf, &_blankline);
   TRACE_RETURN(rval);
 }
 
@@ -882,20 +879,20 @@ void buffer_insertblanklines(BUFFER buf, int line, int nlines, bool upd_marks)
   TRACE_ENTER;
   VALIDATEBUFFER(buf);
   if (nlines == 1) {
-	buffer_insertline(buf, line, &_blankline);
-	if (upd_marks)
-	  marks_upd_insertedlines(buf, line, 1);
+    buffer_insertline(buf, line, &_blankline);
+    if (upd_marks)
+      marks_upd_insertedlines(buf, line, 1);
   }
   else if (nlines > 1) {
-	LINE* lines = calloc(nlines, sizeof(LINE));
-	int i;
-	for (i = 0; i < nlines; i++)
-	  __line_init(lines+i);
-	vec_insertm(&buf->lines, line, nlines, lines);
-	if (upd_marks)
-	  marks_upd_insertedlines(buf, line, nlines);
-	buffer_setflags(buf, BUF_FLG_DIRTY); 
-	free(lines);
+    LINE* lines = calloc(nlines, sizeof(LINE));
+    int i;
+    for (i = 0; i < nlines; i++)
+      __line_init(lines+i);
+    vec_insertm(&buf->lines, line, nlines, lines);
+    if (upd_marks)
+      marks_upd_insertedlines(buf, line, nlines);
+    buffer_setflags(buf, BUF_FLG_DIRTY); 
+    free(lines);
   }
   TRACE_EXIT;
 }
@@ -920,9 +917,9 @@ void buffer_removelines(BUFFER buf, int line, int n, bool upd_marks)
   int j;
   __check_lines_exist(__func__, buf, line, n);
   if (upd_marks)
-	marks_upd_removedlines(buf, line, n);
+    marks_upd_removedlines(buf, line, n);
   for (j = 0; j < n; j++) {
-	__line_destroy(_line(buf, line+j));
+    __line_destroy(_line(buf, line+j));
   }
   vec_removem(&buf->lines, line, n);
   buffer_setflags(buf, LINE_FLG_DIRTY);
@@ -941,7 +938,7 @@ void buffer_insert(BUFFER buf, int line, int col, char c, bool upd_marks)
   buf->longest_line = max(buf->longest_line, cstr_count(&l->txt));
   buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
   if (upd_marks)
-	marks_upd_insertedchars(buf, line, col, 1);
+    marks_upd_insertedchars(buf, line, col, 1);
   TRACE_EXIT;
 }
 
@@ -957,7 +954,7 @@ void buffer_insertct(BUFFER buf, int line, int col, char c, int ct, bool upd_mar
   buf->longest_line = max(buf->longest_line, cstr_count(&l->txt));
   buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
   if (upd_marks)
-	marks_upd_insertedchars(buf, line, col, ct);
+    marks_upd_insertedchars(buf, line, col, ct);
   TRACE_EXIT;
 }
 
@@ -974,7 +971,7 @@ void buffer_insertstrn(BUFFER buf, int line, int col, const char* s, int n, bool
   buf->longest_line = max(buf->longest_line, cstr_count(&l->txt));
   buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
   if (upd_marks)
-	marks_upd_insertedchars(buf, line, col, len);
+    marks_upd_insertedchars(buf, line, col, len);
   TRACE_EXIT;
 }
 
@@ -987,9 +984,9 @@ char buffer_getchar(BUFFER buf, int line, int col)
   struct line_t* l = _line(buf, line);
   char c;
   if (col >= cstr_count(&l->txt))
-	c = ' ';
+    c = ' ';
   else
-	c = cstr_get(&l->txt, col);
+    c = cstr_get(&l->txt, col);
   TRACE_RETURN(c);
 }
 
@@ -1014,15 +1011,15 @@ void buffer_setcharct(BUFFER buf, int line, int col, char c, int ct)
   struct line_t* pline = _line(buf, line);
   int linelen = cstr_count(&pline->txt);
   if (col > linelen) {
-	_expand_to_col(buf, line, col-1);
-	cstr_appendct(&pline->txt, c, ct);
+    _expand_to_col(buf, line, col-1);
+    cstr_appendct(&pline->txt, c, ct);
   }
   else if (col+ct > linelen) {
-	cstr_setct(&pline->txt, col, c, linelen-col);
-	cstr_appendct(&pline->txt, c, col+ct-linelen);
+    cstr_setct(&pline->txt, col, c, linelen-col);
+    cstr_appendct(&pline->txt, c, col+ct-linelen);
   }
   else {
-	cstr_setct(&pline->txt, col, c, ct);
+    cstr_setct(&pline->txt, col, c, ct);
   }
   TRACE_EXIT;
 }
@@ -1042,7 +1039,7 @@ void buffer_setstrn(BUFFER buf, int line, int col, const char* s, int n, bool up
   buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
   int nadded = max(0, col+n-linelen);
   if (upd_marks && nadded > 0)
-	marks_upd_insertedchars(buf, line, linelen, nadded);
+    marks_upd_insertedchars(buf, line, linelen, nadded);
   TRACE_EXIT;
 }
 
@@ -1054,13 +1051,13 @@ void buffer_removechar(BUFFER buf, int line, int col, bool upd_marks)
   __check_line_exists(__func__, buf, line);
   struct line_t* l = _line(buf, line);
   if (cstr_count(&l->txt) <= col) {
-	TRACE_EXIT;
+    TRACE_EXIT;
   }
   else {
-	if (upd_marks)
-	  marks_upd_removedchars(buf, line, col, 1);
-	cstr_remove(&l->txt, col);
-	buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
+    if (upd_marks)
+      marks_upd_removedchars(buf, line, col, 1);
+    cstr_remove(&l->txt, col);
+    buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
   }
   TRACE_EXIT;
 }
@@ -1074,13 +1071,13 @@ void buffer_removechars(BUFFER buf, int line, int col, int n, bool upd_marks)
   struct line_t* l = _line(buf, line);
   int len = cstr_count(&l->txt);
   if (col >= len) {
-	TRACE_EXIT;
+    TRACE_EXIT;
   }
   else {
-	if (upd_marks)
-	  marks_upd_removedchars(buf, line, col, n);
-	cstr_removem(&l->txt, col, min(len-col, n));
-	buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
+    if (upd_marks)
+      marks_upd_removedchars(buf, line, col, n);
+    cstr_removem(&l->txt, col, min(len-col, n));
+    buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
   }
   TRACE_EXIT;
 }
@@ -1102,9 +1099,9 @@ const char* buffer_getcharptr(BUFFER buf, int line, int col)
   __check_line_exists(__func__, buf, line);
   struct line_t* l = buffer_get(buf, line);
   if (col >= cstr_count(&l->txt))
-	return "";
+    return "";
   else
-	return cstr_getcharptr(&l->txt, col);
+    return cstr_getcharptr(&l->txt, col);
 }
 
 
@@ -1113,7 +1110,7 @@ void buffer_upperchars(BUFFER buf, int line, int col, int n)
   TRACE_ENTER;
   VALIDATEBUFFER(buf);
   if (line >= buffer_count(buf))
-	TRACE_EXIT;
+    TRACE_EXIT;
   struct line_t* l = _line(buf, line);
   cstr_upper(&l->txt, col, n);
   buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
@@ -1126,7 +1123,7 @@ void buffer_lowerchars(BUFFER buf, int line, int col, int n)
   TRACE_ENTER;
   VALIDATEBUFFER(buf);
   if (line >= buffer_count(buf))
-	TRACE_EXIT;
+    TRACE_EXIT;
   struct line_t* l = _line(buf, line);
   cstr_lower(&l->txt, col, n);
   buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
@@ -1140,8 +1137,8 @@ void buffer_lowerchars(BUFFER buf, int line, int col, int n)
 //
 
 POE_ERR buffer_copyinsertchars(BUFFER dstbuf, int dstline, int dstcol,
-							   BUFFER srcbuf, int srcline, int srccol,
-							   int n, bool upd_marks)
+                               BUFFER srcbuf, int srcline, int srccol,
+                               int n, bool upd_marks)
 {
   TRACE_ENTER;
   VALIDATEBUFFER(dstbuf);
@@ -1158,8 +1155,8 @@ POE_ERR buffer_copyinsertchars(BUFFER dstbuf, int dstline, int dstcol,
 // Can be faster if the two buffers are different, or if the source range
 // is before the dest range and there is no overlap.
 POE_ERR buffer_copyinsertlines(BUFFER dstbuf, int di,
-							   BUFFER srcbuf, int si,
-							   int n, bool upd_marks)
+                               BUFFER srcbuf, int si,
+                               int n, bool upd_marks)
 {
   TRACE_ENTER;
   VALIDATEBUFFER(dstbuf);
@@ -1168,45 +1165,45 @@ POE_ERR buffer_copyinsertlines(BUFFER dstbuf, int di,
   _expand_to_line(dstbuf, di+n);
   int nsrclines = buffer_count(srcbuf);
   if (si >= nsrclines)
-	TRACE_RETURN(POE_ERR_OK);
+    TRACE_RETURN(POE_ERR_OK);
   n = min(nsrclines - si, n);
   if (dstbuf != srcbuf) {
-	// different buffers - safe to copy from src to dst
-	if (upd_marks)
-	  marks_upd_insertedlines(dstbuf, di, n);
-	__buffer_copyinsertlines(dstbuf, di, srcbuf, si, n);
-	TRACE_RETURN(POE_ERR_OK);
+    // different buffers - safe to copy from src to dst
+    if (upd_marks)
+      marks_upd_insertedlines(dstbuf, di, n);
+    __buffer_copyinsertlines(dstbuf, di, srcbuf, si, n);
+    TRACE_RETURN(POE_ERR_OK);
   }
   else if (si+n <= di) {
-	// src is completely before dst - can safely copy from src to dst
-	if (upd_marks)
-	  marks_upd_insertedlines(dstbuf, di, n);
-	__buffer_copyinsertlines(dstbuf, di, srcbuf, si, n);
-	TRACE_RETURN(POE_ERR_OK);
+    // src is completely before dst - can safely copy from src to dst
+    if (upd_marks)
+      marks_upd_insertedlines(dstbuf, di, n);
+    __buffer_copyinsertlines(dstbuf, di, srcbuf, si, n);
+    TRACE_RETURN(POE_ERR_OK);
   }
   else if (si >= di) {
-	// src is completely after dst, but must use a temp buffer because
-	// there's interactions between the two ranges, and we can't use
-	// the other buffer to help.
-	if (upd_marks)
-	  marks_upd_insertedlines(dstbuf, di, n);
-	struct buffer_t tmp;
-	_buffer_init(&tmp, "", BUF_FLG_INTERNAL, n, default_profile);
-	__buffer_copyinsertlines(&tmp, 0, srcbuf, si, n);
-	__buffer_copyinsertlines(dstbuf, di, &tmp, 0, n);
-	_buffer_destroy(&tmp);
-	TRACE_RETURN(POE_ERR_OK);
+    // src is completely after dst, but must use a temp buffer because
+    // there's interactions between the two ranges, and we can't use
+    // the other buffer to help.
+    if (upd_marks)
+      marks_upd_insertedlines(dstbuf, di, n);
+    struct buffer_t tmp;
+    _buffer_init(&tmp, "", BUF_FLG_INTERNAL, n, default_profile);
+    __buffer_copyinsertlines(&tmp, 0, srcbuf, si, n);
+    __buffer_copyinsertlines(dstbuf, di, &tmp, 0, n);
+    _buffer_destroy(&tmp);
+    TRACE_RETURN(POE_ERR_OK);
   }
   else {
-	TRACE_RETURN(POE_ERR_SRC_DEST_CONFLICT);
+    TRACE_RETURN(POE_ERR_SRC_DEST_CONFLICT);
   }
   TRACE_RETURN(POE_ERR_OK);
 }
 
 
 void __buffer_copyinsertlines(BUFFER dstbuf, int di,
-							  BUFFER srcbuf, int si,
-							  int n)
+                              BUFFER srcbuf, int si,
+                              int n)
 {
   TRACE_ENTER;
   VALIDATEBUFFER(dstbuf);
@@ -1214,9 +1211,9 @@ void __buffer_copyinsertlines(BUFFER dstbuf, int di,
   int j;
   struct line_t* tmplines = PE_ALLOC_TMP(n, sizeof(struct line_t));
   for (j = 0; j < n; j++) {
-	__line_initfrom(&tmplines[j], _line(srcbuf, si+j));
-	tmplines[j].flags |= LINE_FLG_DIRTY;
-	dstbuf->longest_line = max(dstbuf->longest_line, cstr_count(&tmplines[j].txt));
+    __line_initfrom(&tmplines[j], _line(srcbuf, si+j));
+    tmplines[j].flags |= LINE_FLG_DIRTY;
+    dstbuf->longest_line = max(dstbuf->longest_line, cstr_count(&tmplines[j].txt));
   }
   vec_insertm(&dstbuf->lines, di, n, tmplines);
   buffer_setflags(dstbuf, BUF_FLG_DIRTY);
@@ -1227,8 +1224,8 @@ void __buffer_copyinsertlines(BUFFER dstbuf, int di,
 
 
 POE_ERR buffer_copyoverlaychars(BUFFER dstbuf, int dstline, int dstcol,
-								BUFFER srcbuf, int srcline, int srccol,
-								int nchars, bool upd_marks)
+                                BUFFER srcbuf, int srcline, int srccol,
+                                int nchars, bool upd_marks)
 {
   TRACE_ENTER;
   VALIDATEBUFFER(dstbuf);
@@ -1238,23 +1235,23 @@ POE_ERR buffer_copyoverlaychars(BUFFER dstbuf, int dstline, int dstcol,
   POE_ERR err = POE_ERR_OK;
   int srclinelen = buffer_line_length(srcbuf, srcline);
   if (srccol >= srclinelen) {
-	// Nothing to do
+    // Nothing to do
   }
   else if (srccol + nchars >= srclinelen) {
-	const char* srctxt = buffer_getcharptr(srcbuf, srcline, srccol);
-	buffer_setstrn(dstbuf, dstline, dstcol, srctxt, srclinelen-srccol, upd_marks);
+    const char* srctxt = buffer_getcharptr(srcbuf, srcline, srccol);
+    buffer_setstrn(dstbuf, dstline, dstcol, srctxt, srclinelen-srccol, upd_marks);
   }
   else {
-	const char* srctxt = buffer_getcharptr(srcbuf, srcline, srccol);
-	buffer_setstrn(dstbuf, dstline, dstcol, srctxt, nchars, upd_marks);
+    const char* srctxt = buffer_getcharptr(srcbuf, srcline, srccol);
+    buffer_setstrn(dstbuf, dstline, dstcol, srctxt, nchars, upd_marks);
   }
   TRACE_RETURN(err);
 }
 
 
 POE_ERR buffer_copyoverlaylines(BUFFER dstbuf, int dstline,
-								BUFFER srcbuf, int srcline,
-								int nlines, bool upd_marks)
+                                BUFFER srcbuf, int srcline,
+                                int nlines, bool upd_marks)
 {
   TRACE_ENTER;
   VALIDATEBUFFER(dstbuf);
@@ -1263,12 +1260,12 @@ POE_ERR buffer_copyoverlaylines(BUFFER dstbuf, int dstline,
   _expand_to_line(dstbuf, dstline+nlines);
   int i;
   for (i = 0; i < nlines; i++) {
-	int srclinelen = buffer_line_length(srcbuf, srcline+i);
-	int dstlinelen = buffer_line_length(dstbuf, dstline+i);
-	const char* srctxt = buffer_getbufptr(srcbuf, srcline);
-	buffer_setstrn(dstbuf, dstline+i, 0, srctxt, srclinelen, upd_marks);
-	if (dstlinelen > srclinelen)
-	  buffer_removechars(dstbuf, dstline+i, srclinelen, dstlinelen-srclinelen, upd_marks);
+    int srclinelen = buffer_line_length(srcbuf, srcline+i);
+    int dstlinelen = buffer_line_length(dstbuf, dstline+i);
+    const char* srctxt = buffer_getbufptr(srcbuf, srcline);
+    buffer_setstrn(dstbuf, dstline+i, 0, srctxt, srclinelen, upd_marks);
+    if (dstlinelen > srclinelen)
+      buffer_removechars(dstbuf, dstline+i, srclinelen, dstlinelen-srclinelen, upd_marks);
   }
   TRACE_RETURN(POE_ERR_OK);
 }
@@ -1279,7 +1276,7 @@ POE_ERR buffer_splitline(BUFFER buf, int row, int col, bool upd_marks)
   TRACE_ENTER;
   VALIDATEBUFFER(buf);
   if (upd_marks)
-	marks_upd_split(buf, row, col);
+    marks_upd_split(buf, row, col);
   const char* tail = buffer_getcharptr(buf, row, col);
   int taillen = strlen(tail);
   buffer_insertblanklines(buf, row+1, 1, false); // updates handled by upd_split
@@ -1295,12 +1292,12 @@ POE_ERR buffer_joinline(BUFFER buf, int row, bool upd_marks)
   VALIDATEBUFFER(buf);
   int nrows = buffer_count(buf);
   if (row >= nrows-1)
-	TRACE_RETURN(POE_ERR_OK);
+    TRACE_RETURN(POE_ERR_OK);
   const char* tail = buffer_getbufptr(buf, row+1);
   int linelen = buffer_line_length(buf, row);
   int taillen = buffer_line_length(buf, row+1);
   if (upd_marks) {
-	marks_upd_join(buf, row, linelen);
+    marks_upd_join(buf, row, linelen);
   }
   buffer_insertstrn(buf, row, linelen, tail, taillen, false); // mark updates handled above
   buffer_removelines(buf, row+1, 1, false);
@@ -1322,17 +1319,17 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
   cstr_trimleft(&cpy_filename, poe_iswhitespace);
   cstr_trimright(&cpy_filename, poe_iswhitespace);
   if (cstr_count(&cpy_filename) >= 2 && cstr_get(&cpy_filename, 0) == '~' && cstr_get(&cpy_filename, 1) == '/') {
-	cstr_remove(&cpy_filename, 0);
-	const char* home = getenv("HOME");
-	if (home != NULL) {
-	  int homelen = strlen(home);
-	  cstr_insertm(&cpy_filename, 0, homelen, home);
-	}
+    cstr_remove(&cpy_filename, 0);
+    const char* home = getenv("HOME");
+    if (home != NULL) {
+      int homelen = strlen(home);
+      cstr_insertm(&cpy_filename, 0, homelen, home);
+    }
   }
   int flg_rdonly = 0;
   char expanded_filename[PATH_MAX+1];
   if (NULL == realpath(cstr_getbufptr(&cpy_filename), expanded_filename))
-	TRACE_RETURN(POE_ERR_FILE_NOT_FOUND);
+    TRACE_RETURN(POE_ERR_FILE_NOT_FOUND);
   const char* pszFilename = expanded_filename;
   
   // clean out the buffer
@@ -1346,13 +1343,13 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
   const char* pszBasename = (const char*)basename(pszFilename);
   const char* pszDirname = (const char*)dirname(pszFilename);
   if (pszBasename == NULL)
-	logerr("basename('%s') returned error %d", pszFilename, errno);
+    logerr("basename('%s') returned error %d", pszFilename, errno);
   
   if (pszBasename[0] == '/') {
-	cstr_assignstr(&buf->base_buffername, pszBasename+1);
+    cstr_assignstr(&buf->base_buffername, pszBasename+1);
   }
   else {
-	cstr_assignstr(&buf->base_buffername, pszBasename);
+    cstr_assignstr(&buf->base_buffername, pszBasename);
   }
   cstr_assignstr(&buf->orig_dirname, pszDirname);
   cstr_assignstr(&buf->curr_dirname, pszDirname);
@@ -1366,30 +1363,30 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
   // Open the file...
   FILE* f = fopen(pszFilename, "r+");
   if (f == NULL && errno == EACCES) {
-	errno = 0;
-	f = fopen(pszFilename, "r");
-	flg_rdonly = BUF_FLG_RDONLY;
+    errno = 0;
+    f = fopen(pszFilename, "r");
+    flg_rdonly = BUF_FLG_RDONLY;
   }
   if (f == NULL) {
     logerr("error %d opening file '%s'", errno, pszFilename);
-	buffer_setflags(buf, BUF_FLG_NEW);
-	switch (errno) {
-	case EPERM: case EIO: case EACCES:
-	  buffer_ensure_min_lines(buf, false);
-	  err = POE_ERR_READING_FILE;
-	  goto done;
-	  break;
-	case ENOENT:
-	  buffer_ensure_min_lines(buf, false);
-	  err = POE_ERR_FILE_NOT_FOUND;
-	  goto done;
-	  break;
-	default:
-	  buffer_ensure_min_lines(buf, false);
-	  err = POE_ERR_CANT_OPEN;
-	  goto done;
-	  break;
-	}
+    buffer_setflags(buf, BUF_FLG_NEW);
+    switch (errno) {
+    case EPERM: case EIO: case EACCES:
+      buffer_ensure_min_lines(buf, false);
+      err = POE_ERR_READING_FILE;
+      goto done;
+      break;
+    case ENOENT:
+      buffer_ensure_min_lines(buf, false);
+      err = POE_ERR_FILE_NOT_FOUND;
+      goto done;
+      break;
+    default:
+      buffer_ensure_min_lines(buf, false);
+      err = POE_ERR_CANT_OPEN;
+      goto done;
+      break;
+    }
   }
   
   // load the file...
@@ -1400,44 +1397,44 @@ POE_ERR buffer_load(BUFFER buf, cstr* filename, bool tabexpand)
   int c;
   int seenquotes = 0;
   while (!feof(f)) {
-	c = fgetc(f);
-	while (c != '\n' && c != '\r' && !feof(f)) {
-	  if (c == '"' || c == '\'')
-		seenquotes++;
-	  if (c == '\t' && ((seenquotes&1) == 0) && tabexpand) {
-		int nextcol = tabs_next(&load_tabs, col);
-		cstr_appendct(str, ' ', nextcol-col);
-		col = nextcol;
-	  }
-	  else {
-		cstr_append(str, (char)c);
-		col++;
-	  }
-	  c = fgetc(f);
-	}
-	line.flags = LINE_INITIAL_FLAGS;
-	if (c == '\r') {
-	  c = fgetc(f);
-	  line.flags |= LINE_FLG_CR;
-	  if (c == '\n') {
-		line.flags |= LINE_FLG_LF;
-	  }
-	  else {
-		ungetc(c, f);
-	  }
-	}
-	else if (c == '\n') {
-	  line.flags |= LINE_FLG_LF;
-	}
-	
-	// if we are at eof, then we only write out the line if it has
-	// something (i.e. we have an unterminated last line)
-	if (!feof(f) || cstr_count(str) > 0) {
-	  buffer_appendline(buf, &line);
-	  col = 0;
-	  seenquotes = 0;
-	  cstr_clear(str);
-	}
+    c = fgetc(f);
+    while (c != '\n' && c != '\r' && !feof(f)) {
+      if (c == '"' || c == '\'')
+        seenquotes++;
+      if (c == '\t' && ((seenquotes&1) == 0) && tabexpand) {
+        int nextcol = tabs_next(&load_tabs, col);
+        cstr_appendct(str, ' ', nextcol-col);
+        col = nextcol;
+      }
+      else {
+        cstr_append(str, (char)c);
+        col++;
+      }
+      c = fgetc(f);
+    }
+    line.flags = LINE_INITIAL_FLAGS;
+    if (c == '\r') {
+      c = fgetc(f);
+      line.flags |= LINE_FLG_CR;
+      if (c == '\n') {
+        line.flags |= LINE_FLG_LF;
+      }
+      else {
+        ungetc(c, f);
+      }
+    }
+    else if (c == '\n') {
+      line.flags |= LINE_FLG_LF;
+    }
+        
+    // if we are at eof, then we only write out the line if it has
+    // something (i.e. we have an unterminated last line)
+    if (!feof(f) || cstr_count(str) > 0) {
+      buffer_appendline(buf, &line);
+      col = 0;
+      seenquotes = 0;
+      cstr_clear(str);
+    }
   }
   fclose(f);
   
@@ -1467,101 +1464,101 @@ POE_ERR buffer_save(BUFFER buf, cstr* filename, bool blankcompress)
   
   POE_ERR rval = POE_ERR_OK;
   if (filename == NULL)
-	filename = &buf->curr_filename;
+    filename = &buf->curr_filename;
   const char* pszFilename = cstr_getbufptr(filename);
   //logmsg("buffer_save, curr_filename = '%s'", cstr_getbufptr(&buf->curr_filename));
   if (cstr_count(&buf->curr_filename) == 0 && (pszFilename == NULL || strlen(pszFilename) == 0))
-	return POE_ERR_MISSING_FILE_NAME;
+    return POE_ERR_MISSING_FILE_NAME;
   
   // figure out which name to use
   // should really construct out of basename(filename) + "/" + base_buffername)
   cstr save_filename;
   cstr_init(&save_filename, 128);
   if (pszFilename == NULL) {
-	cstr_assignstr(&save_filename, dirname(cstr_getbufptr(&buf->curr_filename)));
-	cstr_append(&save_filename, '/');
-	cstr_appendcstr(&save_filename, &buf->base_buffername);
+    cstr_assignstr(&save_filename, dirname(cstr_getbufptr(&buf->curr_filename)));
+    cstr_append(&save_filename, '/');
+    cstr_appendcstr(&save_filename, &buf->base_buffername);
   }
   else if (*pszFilename == '/' || *pszFilename == '~') {
-	cstr_assign(&save_filename, filename);
+    cstr_assign(&save_filename, filename);
   }
   else {
-	cstr_assignstr(&save_filename, dirname(cstr_getbufptr(&buf->curr_filename)));
-	cstr_append(&save_filename, '/');
-	cstr_appendm(&save_filename, strlen(pszFilename), pszFilename);
+    cstr_assignstr(&save_filename, dirname(cstr_getbufptr(&buf->curr_filename)));
+    cstr_append(&save_filename, '/');
+    cstr_appendm(&save_filename, strlen(pszFilename), pszFilename);
   }
   
   // Open, and handle any errors...
   FILE* f = fopen(cstr_getbufptr(&save_filename), "w");
   if (f == NULL) {
-	cstr_destroy(&save_filename);
-	switch (errno) {
-	case EPERM: case EIO: case EACCES:
-	  TRACE_RETURN(POE_ERR_READING_FILE);
-	  break;
-	case ENOENT:
-	  TRACE_RETURN(POE_ERR_FILE_NOT_FOUND);
-	  break;
-	default:
-	  TRACE_RETURN(POE_ERR_CANT_OPEN);
-	  break;
-	}
+    cstr_destroy(&save_filename);
+    switch (errno) {
+    case EPERM: case EIO: case EACCES:
+      TRACE_RETURN(POE_ERR_READING_FILE);
+      break;
+    case ENOENT:
+      TRACE_RETURN(POE_ERR_FILE_NOT_FOUND);
+      break;
+    default:
+      TRACE_RETURN(POE_ERR_CANT_OPEN);
+      break;
+    }
   }
   
   int nlines = buffer_count(buf);
   int i;
   for (i = 0; i < nlines; i++) {
-	struct line_t* line = _line(buf, i);
-	// Write the line, compressing tabs as necessary
-	int j, col = 0;
-	int len = cstr_count(&line->txt);
-	int seenquotes = 0;
-	for (j = 0; j < len; j++) {
-	  char c = cstr_get(&line->txt, j);
-	  if (c == ' ' && blankcompress && ((seenquotes&1) == 0)) {
-		int nextcol = tabs_next(&save_tabs, col);
-		int runlen = strspn(cstr_getcharptr(&line->txt, j), " ");
-		if (runlen > 2 && runlen >= nextcol-col) {
-		  fputc('\t', f);
-		  col = nextcol;
-		  j = nextcol-1; // will be incremented in 'for'
-		}
-		else {
-		  int k;
-		  for (k = 0; k < runlen; k++)
-			fputc(c, f);
-		  col = col+runlen;
-		  j += runlen-1;
-		}
-	  }
-	  else if (c == '"' || c == '\"') {
-		seenquotes++;
-		fputc((int)c, f);
-		col++;
-	  }
-	  else {
-		fputc((int)c, f);
-		col++;
-	  }
-	}
-	// terminate the line appropriately
-	if ((line->flags & (LINE_FLG_CR | LINE_FLG_LF)) == (LINE_FLG_CR | LINE_FLG_LF)) { // crlf
-	  fputc('\r', f); fputc('\n', f);
-	}
-	else if ((line->flags & LINE_FLG_CR) == LINE_FLG_CR) { // cr
-	  fputc('\r', f);
-	}
-	else if ((line->flags & LINE_FLG_LF) == LINE_FLG_LF) { // lf
-	  fputc('\n', f);
-	}
-	else {
-	  // Unterminated line. This is a fairly common occurrence on the
-	  // last line (the eof is a terminator), but if it's in the
-	  // middle of the file then there's a problem.
-	  // printf("unterminated line %d / %d\n", i, nlines);
-	  if (i < nlines-1)
-		fputc('\n', f);
-	}
+    struct line_t* line = _line(buf, i);
+    // Write the line, compressing tabs as necessary
+    int j, col = 0;
+    int len = cstr_count(&line->txt);
+    int seenquotes = 0;
+    for (j = 0; j < len; j++) {
+      char c = cstr_get(&line->txt, j);
+      if (c == ' ' && blankcompress && ((seenquotes&1) == 0)) {
+        int nextcol = tabs_next(&save_tabs, col);
+        int runlen = strspn(cstr_getcharptr(&line->txt, j), " ");
+        if (runlen > 2 && runlen >= nextcol-col) {
+          fputc('\t', f);
+          col = nextcol;
+          j = nextcol-1; // will be incremented in 'for'
+        }
+        else {
+          int k;
+          for (k = 0; k < runlen; k++)
+            fputc(c, f);
+          col = col+runlen;
+          j += runlen-1;
+        }
+      }
+      else if (c == '"' || c == '\"') {
+        seenquotes++;
+        fputc((int)c, f);
+        col++;
+      }
+      else {
+        fputc((int)c, f);
+        col++;
+      }
+    }
+    // terminate the line appropriately
+    if ((line->flags & (LINE_FLG_CR | LINE_FLG_LF)) == (LINE_FLG_CR | LINE_FLG_LF)) { // crlf
+      fputc('\r', f); fputc('\n', f);
+    }
+    else if ((line->flags & LINE_FLG_CR) == LINE_FLG_CR) { // cr
+      fputc('\r', f);
+    }
+    else if ((line->flags & LINE_FLG_LF) == LINE_FLG_LF) { // lf
+      fputc('\n', f);
+    }
+    else {
+      // Unterminated line. This is a fairly common occurrence on the
+      // last line (the eof is a terminator), but if it's in the
+      // middle of the file then there's a problem.
+      // printf("unterminated line %d / %d\n", i, nlines);
+      if (i < nlines-1)
+        fputc('\n', f);
+    }
   }
   
   fclose(f);
@@ -1584,67 +1581,67 @@ bool buffer_wrap_line(BUFFER buf,
   int leftmargin, rightmargin, paragraphmargin;
   buffer_getmargins(buf, &leftmargin, &rightmargin, &paragraphmargin);
   if (lmargin < 0)
-	lmargin = leftmargin;
+    lmargin = leftmargin;
   if (rmargin < 0)
-	rmargin = rightmargin;
+    rmargin = rightmargin;
   // Make sure first line is indented properly
   int this_leftmargin;
   if (pmargin < 0) {
-	pmargin = paragraphmargin;
-	if (row==0 || buffer_isblankline(buf, row-1))
-	  this_leftmargin = pmargin;
-	else
-	  this_leftmargin = lmargin;
+    pmargin = paragraphmargin;
+    if (row==0 || buffer_isblankline(buf, row-1))
+      this_leftmargin = pmargin;
+    else
+      this_leftmargin = lmargin;
   }
   else {
-	this_leftmargin = pmargin;
+    this_leftmargin = pmargin;
   }
   int firstnb = buffer_scantill_nowrap(buf, row, 0, 1, poe_isnotwhitespace);
   if (firstnb < this_leftmargin) {
-	buffer_trimleft(buf, row, upd_marks);
-	buffer_trimright(buf, row, upd_marks);
-	buffer_respace(buf, row, poe_iswhitespace, upd_marks);
-	buffer_insertct(buf, row, 0, ' ', this_leftmargin, upd_marks);
+    buffer_trimleft(buf, row, upd_marks);
+    buffer_trimright(buf, row, upd_marks);
+    buffer_respace(buf, row, poe_iswhitespace, upd_marks);
+    buffer_insertct(buf, row, 0, ' ', this_leftmargin, upd_marks);
   }
   
   // bail if there's nothing more to do
   int linelen = buffer_line_length(buf, row);
   if (linelen <= rightmargin) {
-	TRACE_RETURN(false);
+    TRACE_RETURN(false);
   }
   
   MARK rgn = mark_alloc(0);
   mark_start(rgn, Marktype_Line, buf, row, 0);
   if (lastrow < 0)
-	lastrow = max(row, max(0, buffer_findparagraphsep(buf, row, 1)-1));
+    lastrow = max(row, max(0, buffer_findparagraphsep(buf, row, 1)-1));
   mark_extend(rgn, Marktype_Line, buf, max(row, lastrow), 0);
   int l1 = row, l2 = lastrow, c2 = 0;
   
   int i;
   bool didsplit = false;
   for (i = l1; i <= l2; ) {
-	bool didsplitthis = false;
-	buffer_trimleft(buf, i, upd_marks);
-	buffer_trimright(buf, i, upd_marks);
-	buffer_respace(buf, i, poe_iswhitespace, upd_marks);
-	buffer_insertct(buf, i, 0, ' ', this_leftmargin, upd_marks);
-	if (i < l2) {
-	  buffer_trimleft(buf, i+1, upd_marks);
-	  buffer_trimright(buf, i+1, upd_marks);
-	  buffer_respace(buf, i+1, poe_iswhitespace, upd_marks);
-	  buffer_joinline(buf, i, upd_marks);
-	  didsplitthis = _buffer_wrap_single_line(buf, i, leftmargin, rightmargin, upd_marks);
-	  didsplit |= didsplitthis;
-	  if (didsplitthis)
-		i++;
-	}
-	else {
-	  didsplitthis = _buffer_wrap_single_line(buf, i, leftmargin, rightmargin, true);
-	  didsplit |= didsplitthis;
-	  i++;
-	}
-	mark_get_end(rgn, &l2, &c2);
-	this_leftmargin = lmargin;
+    bool didsplitthis = false;
+    buffer_trimleft(buf, i, upd_marks);
+    buffer_trimright(buf, i, upd_marks);
+    buffer_respace(buf, i, poe_iswhitespace, upd_marks);
+    buffer_insertct(buf, i, 0, ' ', this_leftmargin, upd_marks);
+    if (i < l2) {
+      buffer_trimleft(buf, i+1, upd_marks);
+      buffer_trimright(buf, i+1, upd_marks);
+      buffer_respace(buf, i+1, poe_iswhitespace, upd_marks);
+      buffer_joinline(buf, i, upd_marks);
+      didsplitthis = _buffer_wrap_single_line(buf, i, leftmargin, rightmargin, upd_marks);
+      didsplit |= didsplitthis;
+      if (didsplitthis)
+        i++;
+    }
+    else {
+      didsplitthis = _buffer_wrap_single_line(buf, i, leftmargin, rightmargin, true);
+      didsplit |= didsplitthis;
+      i++;
+    }
+    mark_get_end(rgn, &l2, &c2);
+    this_leftmargin = lmargin;
   }
   
   mark_free(rgn);
@@ -1660,16 +1657,16 @@ bool _buffer_wrap_single_line(BUFFER buf, int row, int leftmargin, int rightmarg
   bool didsplit = false;
   int linelen = buffer_line_length(buf, row);
   if (linelen > rightmargin) {
-	int last_word_pos = buffer_scantill_nowrap(buf, row, buffer_line_length(buf, row)-1, -1, poe_isnotwhitespace);
-	if (last_word_pos > rightmargin) {
-	  int brk_word_pos = buffer_scantill_nowrap(buf, row, rightmargin-1, -1, poe_iswhitespace);
-	  if (brk_word_pos > leftmargin) {
-		buffer_splitline(buf, row, brk_word_pos+1, upd_marks);
-		buffer_trimleft(buf, row+1, upd_marks);
-		buffer_insertct(buf, row+1, 0, ' ', leftmargin, upd_marks);
-		didsplit = true;
-	  }
-	}
+    int last_word_pos = buffer_scantill_nowrap(buf, row, buffer_line_length(buf, row)-1, -1, poe_isnotwhitespace);
+    if (last_word_pos > rightmargin) {
+      int brk_word_pos = buffer_scantill_nowrap(buf, row, rightmargin-1, -1, poe_iswhitespace);
+      if (brk_word_pos > leftmargin) {
+        buffer_splitline(buf, row, brk_word_pos+1, upd_marks);
+        buffer_trimleft(buf, row+1, upd_marks);
+        buffer_insertct(buf, row+1, 0, ' ', leftmargin, upd_marks);
+        didsplit = true;
+      }
+    }
   }
   TRACE_RETURN(didsplit);
 }
@@ -1696,13 +1693,13 @@ int buffer_respace(BUFFER buf, int line, char_pred_t spacepred, bool upd_marks)
     int space_end = i;
     int nspaces = space_end - wrd_end;
     int nspaces_needed;
-	
+        
     // Figure out how many spaces we need after this word
     if (str[wrd_end-1] == '.' || str[wrd_end-1] == ':')
       nspaces_needed = 2;
     else
       nspaces_needed = 1;
-	
+        
     // Remove/insert extra spaces as needed.
     if (nspaces < nspaces_needed) {
       int nadd = nspaces_needed - nspaces;
@@ -1716,7 +1713,7 @@ int buffer_respace(BUFFER buf, int line, char_pred_t spacepred, bool upd_marks)
       nchars_delta -= nrem;
       i -= nrem;
     }
-	
+        
     len = buffer_line_length(buf, line);
     str = buffer_getbufptr(buf, line);
   }
@@ -1762,7 +1759,7 @@ bool buffer_search(BUFFER buf, int* prow, int* pcol, int* pendcol, const cstr* p
   if (found) {
     *prow = row;
     *pcol = col;
-	*pendcol = col + cstr_count(pat);
+    *pendcol = col + cstr_count(pat);
   }
   TRACE_RETURN(found);
 }
@@ -1779,42 +1776,37 @@ void buffer_load_dir_listing(BUFFER buf, const char* dirname)
   cstr_assign(&buf->curr_dirname, &sdirname);
   cstr_assign(&buf->orig_dirname, &sdirname);
 
-  //cstr sbufname;
-  //  cstr_initstr(&sbufname, ".DIR ");
-  //cstr_appendstr(&sbufname, dirname);
-  // cstr_assign(&buf->buffername, &sbufname);
-
   cstr_destroy(&sdirname);
   // 
   DIR* dir = opendir(dirname);
   if (dir) {
-	struct dirent* d = NULL;
-	int linenum = 0;
-	while ((d = readdir(dir)) != NULL) {
-	  if (d->d_type != DT_REG && d->d_type != DT_DIR)
-		continue;
-	  int filelen = 0;
-	  char* filetype;
-	  char line[MAXNAMLEN+128];
-	  if (d->d_type == DT_REG) {
-		filetype = "FILE";
-		struct stat st; 
-		if (stat(d->d_name, &st) == 0)
-		  filelen = st.st_size;
-	  }
-	  else if (d->d_type == DT_DIR) {
-		filetype = "DIR ";
-	  }
-	  else {
-		filetype = "UNK ";
-	  }
-	  snprintf(line, sizeof(line), "%4s  %10d  %s", filetype, filelen, d->d_name);
-	  int bufct = buffer_count(buf);
-	  if (linenum >= bufct)
-		buffer_appendblanklines(buf, bufct-linenum+1);
-	  buffer_setstrn(buf, linenum, 0, line, strlen(line), false);
-	  ++linenum;
-	}
+    struct dirent* d = NULL;
+    int linenum = 0;
+    while ((d = readdir(dir)) != NULL) {
+      if (d->d_type != DT_REG && d->d_type != DT_DIR)
+        continue;
+      int filelen = 0;
+      char* filetype;
+      char line[MAXNAMLEN+128];
+      if (d->d_type == DT_REG) {
+        filetype = "FILE";
+        struct stat st; 
+        if (stat(d->d_name, &st) == 0)
+          filelen = st.st_size;
+      }
+      else if (d->d_type == DT_DIR) {
+        filetype = "DIR ";
+      }
+      else {
+        filetype = "UNK ";
+      }
+      snprintf(line, sizeof(line), "%4s %13d %s", filetype, filelen, d->d_name);
+      int bufct = buffer_count(buf);
+      if (linenum >= bufct)
+        buffer_appendblanklines(buf, bufct-linenum+1);
+      buffer_setstrn(buf, linenum, 0, line, strlen(line), false);
+      ++linenum;
+    }
   }
   
   closedir(dir);
@@ -1828,12 +1820,12 @@ void buffer_clear(BUFFER buf, bool ensure_min_lines, bool upd_marks)
 {
   TRACE_ENTER;
   buffer_ensure_min_lines(buf, false);
-  if (ensure_min_lines)	{
-	buffer_removelines(buf, 1, max(0, buffer_count(buf)-1), upd_marks);
-	buffer_removechars(buf, 0, 0, buffer_line_length(buf, 0), upd_marks);
+  if (ensure_min_lines) {
+    buffer_removelines(buf, 1, max(0, buffer_count(buf)-1), upd_marks);
+    buffer_removechars(buf, 0, 0, buffer_line_length(buf, 0), upd_marks);
   }
   else {
-	buffer_removelines(buf, 0, buffer_count(buf), upd_marks);
+    buffer_removelines(buf, 0, buffer_count(buf), upd_marks);
   }
   TRACE_EXIT;
 }

@@ -31,6 +31,8 @@ install :
 uninstall :
 	$(ECHO) uninstalling from $(PREFIX) .
 	-for d in $(DIRS); do (cd $$d; $(MAKE) -f Makefile.linux uninstall ); done
+	rm -r $(PREFIX)/share/poe
+	rm $(PREFIX)/man/man1/poe.1
 
 forcelook :
 	@true

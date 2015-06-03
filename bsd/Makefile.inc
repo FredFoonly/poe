@@ -27,7 +27,7 @@ ARFLAGS_DEBUG =
 
 
 CC      = cc
-LD      = cc
+LD      = cc --static-libgcc
 AR      = ar
 RANLIB  = ranlib
 RM      = rm

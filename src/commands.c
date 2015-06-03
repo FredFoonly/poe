@@ -38,13 +38,147 @@ void defkey(PROFILEPTR prof, const char* keyname, const intptr_t* cmds, size_t n
 
 extern POE_ERR __cmd_err;
 
-struct cmddef_t {
-  const char** cmdspec;
-  command_handler_t func;
+
+
+struct cmddef_trie_pair_t {
+  const char* name;
+  struct cmddef_trie_t* node; 
 };
 
+struct cmddef_trie_t {
+  command_handler_t func; // may be null
+  struct vec_t /* struct cmddef_trie_pair_t */ children; 
+};
 
-struct vec_t __cmd_defs;
+struct cmddef_trie_t* __cmd_trie = NULL;
+
+
+ 
+// The names should be statically allocated or otherwise safe, because
+// we won't copy them into the tree.  This is fine for the expected use.
+void __defcmd_trie(struct cmddef_trie_t* trienode,
+                   const char** cmdspec, int cmd_idx,
+                   command_handler_t func)
+{
+  TRACE_ENTER;
+  const char* thisname = cmdspec[cmd_idx];
+  // If we've hit the end of the command sequence, then this node
+  // is where the handler lives (if it exists).
+  if (thisname == NULL) {
+    if (trienode->func != NULL)
+      logerr("    duplicate command definition @ %s", cmdspec[cmd_idx-1]);
+    trienode->func = func;
+    TRACE_EXIT;
+  }
+
+  int i, nchildren = vec_count(&trienode->children);
+  for (i = 0; i < nchildren; i++) {
+    struct cmddef_trie_pair_t* pChildpair = vec_get(&trienode->children, i);
+		const char* thatname = pChildpair->name;
+    int icmp = strcasecmp(thisname, thatname);
+		if (icmp == 0) { // partial match, recurse on rest of command
+			struct cmddef_trie_t* thatnode = pChildpair->node;
+      __defcmd_trie(thatnode, cmdspec, cmd_idx+1, func);
+      TRACE_EXIT;
+    }
+  }
+  // Ran off the end of the child list without finding a spot.  Add it
+  // at the end of the child list.
+  struct cmddef_trie_pair_t childpair;
+  struct cmddef_trie_t* pChildnode;
+	pChildnode = (struct cmddef_trie_t*)calloc(1, sizeof(struct cmddef_trie_t));
+  vec_init(&pChildnode->children, 1, sizeof(struct cmddef_trie_pair_t));
+  childpair.name = strsave(thisname);
+  childpair.node = pChildnode;
+  vec_append(&trienode->children, &childpair);
+  __defcmd_trie(pChildnode, cmdspec, cmd_idx+1, func);
+  TRACE_EXIT;
+}
+
+
+void defcmd_trie(const char** cmdspec, command_handler_t func)
+{
+  TRACE_ENTER;
+  if (__cmd_trie == NULL) {
+    __cmd_trie = (struct cmddef_trie_t*)calloc(1, sizeof(struct cmddef_trie_t));
+    vec_init(&__cmd_trie->children, 100, sizeof(struct cmddef_trie_t));
+  }
+  __defcmd_trie(__cmd_trie, cmdspec, 0, func);
+  TRACE_EXIT;
+}
+
+
+command_handler_t __lookup_command_trie(struct cmddef_trie_t* trienode,
+                                        const pivec* cmdseq,
+                                        int pc,
+                                        int* args_idx,
+                                        command_handler_t prev_hndlr,
+                                        int prev_args_idx)
+{
+  TRACE_ENTER;
+  command_handler_t cur_hndlr;
+  int cur_args_idx;
+  
+  // Update the current handler & the args_idx it corresponds to, as
+  // we walk down the tree.
+  if (trienode->func != NULL) {
+    cur_hndlr = trienode->func;
+    cur_args_idx = pc;
+  }
+  else {
+    cur_hndlr = prev_hndlr;
+    cur_args_idx = prev_args_idx;
+  }
+
+  // If we've hit the end of the command sequence, then this node (or
+  // the previous handler as we came down the trie) is the one to use.
+  if (END_OF_CMD(cmdseq, pc) || !CMD_IS_STR(pivec_get(cmdseq, pc))) {
+    *args_idx = pc;
+    cur_hndlr = trienode->func;
+    TRACE_RETURN(cur_hndlr);
+  }
+
+  const char* thisname = CMD_STRVAL(pivec_get(cmdseq, pc));
+
+  int i, nchildren = vec_count(&trienode->children);
+	struct cmddef_trie_pair_t* pPrevchildpair = NULL;
+  for (i = 0; i < nchildren; i++) {
+    struct cmddef_trie_pair_t* pChildpair = vec_get(&trienode->children, i);
+		const char* thatname = pChildpair->name;
+    int icmp = strcasecmp(thisname, thatname);
+		if (icmp == 0) { // Partial match, recurse on rest of command
+			// Nudge this child forward if there's room
+			struct cmddef_trie_t* thatnode = pChildpair->node;
+			if (pPrevchildpair != NULL) {
+				struct cmddef_trie_pair_t tmp;
+				memcpy(&tmp, pChildpair, sizeof(struct cmddef_trie_pair_t));
+				memcpy(pChildpair, pPrevchildpair, sizeof(struct cmddef_trie_pair_t));
+				memcpy(pPrevchildpair, &tmp, sizeof(struct cmddef_trie_pair_t));
+			}
+      cur_hndlr = __lookup_command_trie(thatnode, cmdseq, pc+1, args_idx,
+																				cur_hndlr, cur_args_idx);
+      TRACE_RETURN(cur_hndlr);
+    }
+		pPrevchildpair = pChildpair;
+  }
+  *args_idx = cur_args_idx;
+  TRACE_RETURN(cur_hndlr);
+}
+
+
+command_handler_t lookup_command_trie(const pivec* cmdseq,
+                                      int pc,
+                                      int* args_idx)
+{
+  command_handler_t handler = NULL;
+  TRACE_ENTER;
+  if (__cmd_trie != NULL) {
+    handler = __lookup_command_trie(__cmd_trie, cmdseq, pc, args_idx,
+																		(command_handler_t)NULL, pc+1);
+  }
+  TRACE_RETURN(handler);
+}
+
 
 
 void defcmds(void);
@@ -53,7 +187,6 @@ void defcmds(void);
 void init_commands(void)
 {
   TRACE_ENTER;
-  vec_init(&__cmd_defs, 100, sizeof(struct cmddef_t));
   defcmds();
   TRACE_EXIT;
 }
@@ -62,18 +195,15 @@ void init_commands(void)
 void close_commands(void)
 {
   TRACE_ENTER;
-  vec_destroy(&__cmd_defs);
   TRACE_EXIT;
 }
+
 
 
 void defcmd(const char** cmdspec, command_handler_t func)
 {
   TRACE_ENTER;
-  struct cmddef_t newcmddef;
-  newcmddef.cmdspec = cmdspec;
-  newcmddef.func = func;
-  vec_append(&__cmd_defs, &newcmddef);
+  defcmd_trie(cmdspec, func);
   TRACE_EXIT;
 }
 
@@ -81,24 +211,8 @@ void defcmd(const char** cmdspec, command_handler_t func)
 command_handler_t lookup_command(const pivec* cmdseq, int pc, int* args_idx)
 {
   TRACE_ENTER;
-  int i, j, n = vec_count(&__cmd_defs);
-  for (i = 0; i < n; i++) {
-    struct cmddef_t* cmddef = vec_get(&__cmd_defs, i);
-    for (j = 0;
-        !END_OF_CMD(cmdseq,pc+j)
-          && cmddef->cmdspec[j] != NULL
-          && CMD_IS_STR(pivec_get(cmdseq, pc+j)) 
-          && strcasecmp(CMD_STRVAL(pivec_get(cmdseq, pc+j)), cmddef->cmdspec[j]) == 0;
-        j++)
-     ;
-    if (cmddef->cmdspec[j] == NULL) {
-     *args_idx = pc+j;
-     command_handler_t func = cmddef->func;
-     TRACE_RETURN(func);
-    }
-  }
-  *args_idx = -1;
-  TRACE_RETURN(NULL);
+  command_handler_t hndlr = lookup_command_trie(cmdseq, pc, args_idx);
+  TRACE_RETURN(hndlr);
 }
 
 
@@ -107,12 +221,12 @@ POE_ERR _savelines_other(BUFFER src, int line, int nlines)
   TRACE_ENTER;
   // Don't save command lines
   if (buffer_tstflags(src, BUF_FLG_CMDLINE))
-	TRACE_RETURN(POE_ERR_OK);
+    TRACE_RETURN(POE_ERR_OK);
   char hdr_line[PATH_MAX+64];
   const char* buffername = buffer_name(src);
   snprintf(hdr_line, sizeof(hdr_line), "********** %s %d %d **********", 
-            buffername==NULL?"???":buffername,
-            line+1, line+nlines+1);
+           buffername==NULL?"???":buffername,
+           line+1, line+nlines+1);
   buffer_insertblanklines(unnamed_buffer, 0, 2, true);
   POE_ERR err = buffer_copyinsertlines(unnamed_buffer, 1, src, line, nlines, true);
   buffer_insertstrn(unnamed_buffer, 0, 0, hdr_line, strlen(hdr_line), true);
@@ -161,21 +275,21 @@ void xtract_cmd_context(cmd_ctx* ctx, WINPTR* w, VIEWPTR* v, BUFFER* b, int* r, 
 
 #define CMD_ENTER(ctx) TRACE_ENTER
 
-#define CMD_ENTER_BND(ctx,w,v,b,r,c)           \
-  TRACE_ENTER;                                 \
-  WINPTR w; VIEWPTR v; BUFFER b; int r, c;     \
+#define CMD_ENTER_BND(ctx,w,v,b,r,c)            \
+  TRACE_ENTER;                                  \
+  WINPTR w; VIEWPTR v; BUFFER b; int r, c;      \
   xtract_targ_context(ctx, &w,&v,&b,&r,&c);
   
-#define CMD_ENTER_DATAONLY(ctx)                \
-  TRACE_ENTER;                                 \
-  if (ctx->targ_buf == ctx->cmd_buf)           \
+#define CMD_ENTER_DATAONLY(ctx)                 \
+  TRACE_ENTER;                                  \
+  if (ctx->targ_buf == ctx->cmd_buf)            \
     CMD_RETURN(POE_ERR_UNK_CMD)
 
-#define CMD_ENTER_DATAONLY_BND(ctx,w,v,b,r,c)  \
-  TRACE_ENTER;                                 \
-  if (ctx->targ_buf == ctx->cmd_buf)           \
-    CMD_RETURN(POE_ERR_UNK_CMD);               \
-  WINPTR w; VIEWPTR v; BUFFER b; int r, c;     \
+#define CMD_ENTER_DATAONLY_BND(ctx,w,v,b,r,c)   \
+  TRACE_ENTER;                                  \
+  if (ctx->targ_buf == ctx->cmd_buf)            \
+    CMD_RETURN(POE_ERR_UNK_CMD);                \
+  WINPTR w; VIEWPTR v; BUFFER b; int r, c;      \
   xtract_targ_context(ctx, &w,&v,&b,&r,&c);
 
 
@@ -185,8 +299,8 @@ int next_parm_int(cmd_ctx* ctx, int deflt)
   TRACE_ENTER;
   int rval = deflt;
   if ((ctx->cmdseq != NULL && ctx->pc >= 0)
-     && (!(END_OF_CMD(ctx->cmdseq, ctx->pc) || END_OF_CMDSEQ(ctx->cmdseq, ctx->pc)))
-     && (CMD_IS_INT(pivec_get(ctx->cmdseq, ctx->pc)))) {
+      && (!(END_OF_CMD(ctx->cmdseq, ctx->pc) || END_OF_CMDSEQ(ctx->cmdseq, ctx->pc)))
+      && (CMD_IS_INT(pivec_get(ctx->cmdseq, ctx->pc)))) {
     rval = CMD_INTVAL(pivec_get(ctx->cmdseq, ctx->pc));
     ctx->pc++;
   }
@@ -199,8 +313,8 @@ const char* next_parm_str(cmd_ctx* ctx, const char* deflt)
   CMD_ENTER(ctx);
   const char* rval = deflt;
   if ((ctx->cmdseq != NULL && ctx->pc >= 0)
-     && (!(END_OF_CMD(ctx->cmdseq, ctx->pc) || END_OF_CMDSEQ(ctx->cmdseq, ctx->pc)))
-     && (CMD_IS_STR(pivec_get(ctx->cmdseq, ctx->pc)))) {
+      && (!(END_OF_CMD(ctx->cmdseq, ctx->pc) || END_OF_CMDSEQ(ctx->cmdseq, ctx->pc)))
+      && (CMD_IS_STR(pivec_get(ctx->cmdseq, ctx->pc)))) {
     rval = CMD_STRVAL(pivec_get(ctx->cmdseq, ctx->pc));
     ctx->pc++;
   }
@@ -223,11 +337,11 @@ bool next_parm_is_str(cmd_ctx* ctx)
   bool rval = false;
   if (ctx->cmdseq != NULL && ctx->pc >= 0) {
     if (END_OF_CMD(ctx->cmdseq, ctx->pc) || END_OF_CMDSEQ(ctx->cmdseq, ctx->pc))
-     rval = false;
+      rval = false;
     else if (CMD_IS_STR(pivec_get(ctx->cmdseq, ctx->pc)))
-     rval = true;
+      rval = true;
     else
-     rval = false;
+      rval = false;
   }
   else {
     rval = false;
@@ -556,12 +670,12 @@ POE_ERR _cmd_char(cmd_ctx* ctx, char chr)
   PROFILEPTR profile = buffer_get_profile(buf); 
   if (chr == ' ' && profile->autowrap) {
     buffer_wrap_line(buf, row, -1, -1, -1, -1, true);
-	if (insert_mode) {
-	  update_context(ctx);
-	  xtract_targ_context(ctx, &wnd, &view, &buf, &row, &col);
-	  if (col > 0 && buffer_getchar(buf, row, col-1) != ' ')
-		buffer_insert(buf, row, col, ' ', true);
-	}
+    if (insert_mode) {
+      update_context(ctx);
+      xtract_targ_context(ctx, &wnd, &view, &buf, &row, &col);
+      if (col > 0 && buffer_getchar(buf, row, col-1) != ' ')
+        buffer_insert(buf, row, col, ' ', true);
+    }
   }
   CMD_RETURN(err);
 }
@@ -682,11 +796,11 @@ POE_ERR cmd_delete_char_join(cmd_ctx* ctx)
   if (row == nlines-1 && col >= nchars)
     CMD_RETURN(err);
   if (col >= nchars) {
-        _savelines_other(buf, row, 2);
-        err = buffer_joinline(buf, row, true);
+    _savelines_other(buf, row, 2);
+    err = buffer_joinline(buf, row, true);
   }
   if (err == POE_ERR_OK)
-        buffer_removechar(buf, row, col, true);
+    buffer_removechar(buf, row, col, true);
   CMD_RETURN(err);
 }
 
@@ -734,7 +848,7 @@ POE_ERR cmd_left_edge(cmd_ctx* ctx)
 POE_ERR cmd_center_line(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx)
-  markstack_cur_seal();
+    markstack_cur_seal();
   int ht, wd;
   view_get_portsize(ctx->targ_view, &ht, &wd);
   int top, left, bot, right;
@@ -842,7 +956,7 @@ POE_ERR cmd_begin_word(cmd_ctx* ctx)
   else {
     buffer_scantill_wrap(buf, &row, &col, -1, poe_iswhitespace);
     if (poe_iswhitespace(buffer_getchar(buf, row, col)))
-	  buffer_right_wrap(buf, &row, &col);
+      buffer_right_wrap(buf, &row, &col);
   }
   view_move_cursor_to(view, row, col);
   CMD_RETURN(POE_ERR_OK);
@@ -914,7 +1028,7 @@ POE_ERR cmd_backtab_paragraph(cmd_ctx* ctx)
   newrow = buffer_findnonparagraphsep(buf, newrow, -1);
   newrow = buffer_findparagraphsep(buf, newrow, -1);
   if (newrow > 0)
-	newrow = min(buffer_count(buf)-1, newrow+1);
+    newrow = min(buffer_count(buf)-1, newrow+1);
   view_move_cursor_to(view, newrow, 0);
   CMD_RETURN(POE_ERR_OK);
 }
@@ -925,12 +1039,12 @@ POE_ERR cmd_begin_paragraph(cmd_ctx* ctx)
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
   int newrow = row;
   if (buffer_isparagraphsep(buf, row)) {
-	newrow = buffer_findnonparagraphsep(buf, newrow, 1);
+    newrow = buffer_findnonparagraphsep(buf, newrow, 1);
   }
   else {
-	newrow = buffer_findparagraphsep(buf, newrow, -1);
-	if (newrow > 0)
-	  newrow = min(buffer_count(buf)-1, newrow+1);
+    newrow = buffer_findparagraphsep(buf, newrow, -1);
+    if (newrow > 0)
+      newrow = min(buffer_count(buf)-1, newrow+1);
   }
   view_move_cursor_to(view, newrow, 0);
   CMD_RETURN(POE_ERR_OK);
@@ -942,11 +1056,11 @@ POE_ERR cmd_end_paragraph(cmd_ctx* ctx)
   CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
   int newrow = row;
   if (buffer_isparagraphsep(buf, row)) {
-	newrow = buffer_findnonparagraphsep(buf, newrow, -1);
+    newrow = buffer_findnonparagraphsep(buf, newrow, -1);
   }
   else {
-	newrow = buffer_findparagraphsep(buf, newrow, 1);
-	newrow = max(0, newrow-1);
+    newrow = buffer_findparagraphsep(buf, newrow, 1);
+    newrow = max(0, newrow-1);
   }
   col = buffer_line_length(buf, newrow);
   view_move_cursor_to(view, newrow, col);
@@ -1026,7 +1140,7 @@ POE_ERR cmd_mark_block(cmd_ctx* ctx)
 
 POE_ERR cmd_mark_char(cmd_ctx* ctx)
 {
-  CMD_ENTER_DATAONLY(ctx);
+  CMD_ENTER(ctx);
   POE_ERR rval = markstack_cur_place(Marktype_Char, ctx->targ_buf, ctx->targ_row, ctx->targ_col);
   CMD_RETURN(rval);
 }
@@ -1052,14 +1166,14 @@ POE_ERR cmd_begin_mark(cmd_ctx* ctx)
   if (err == POE_ERR_OK) {
     switch (typ) {
     case Marktype_Line:
-     err = view_move_cursor_to(view, l1, col);
-     break;
+      err = view_move_cursor_to(view, l1, col);
+      break;
     case Marktype_Char: case Marktype_Block:
-     err = view_move_cursor_to(view, l1, c1);
-     break;
+      err = view_move_cursor_to(view, l1, c1);
+      break;
     case Marktype_None: default:
-     err = POE_ERR_NO_MARKED_AREA;
-     break;
+      err = POE_ERR_NO_MARKED_AREA;
+      break;
     }
   }
   CMD_RETURN(err);
@@ -1086,14 +1200,14 @@ POE_ERR cmd_end_mark(cmd_ctx* ctx)
   if (err == POE_ERR_OK) {
     switch (typ) {
     case Marktype_Line:
-     err = view_move_cursor_to(view, l2, col);
-     break;
+      err = view_move_cursor_to(view, l2, col);
+      break;
     case Marktype_Char: case Marktype_Block:
-     err = view_move_cursor_to(view, l2, c2);
-     break;
+      err = view_move_cursor_to(view, l2, c2);
+      break;
     case Marktype_None: default:
-     err = POE_ERR_NO_MARKED_AREA;
-     break;
+      err = POE_ERR_NO_MARKED_AREA;
+      break;
     }
   }
   CMD_RETURN(err);
@@ -1177,8 +1291,8 @@ POE_ERR cmd_line(cmd_ctx* ctx)
 POE_ERR cmd_column(cmd_ctx* ctx)
 {
   CMD_ENTER(ctx);
-  int targ_col = next_parm_int(ctx, ctx->targ_col);
-  view_move_cursor_to(ctx->targ_view, ctx->targ_row, targ_col);
+  int targ_col = next_parm_int(ctx, ctx->targ_col+1);
+  view_move_cursor_to(ctx->targ_view, ctx->targ_row, targ_col-1);
   CMD_RETURN(POE_ERR_OK);
 }
 
@@ -1348,7 +1462,7 @@ POE_ERR cmd_escape(cmd_ctx* ctx)
 // blech
 POE_ERR cmd_delete_mark(cmd_ctx* ctx)
 {
-  CMD_ENTER_DATAONLY_BND(ctx, wnd, view, buf, row, col);
+  CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
   markstack_cur_seal();
   cmd_begin_mark(ctx);
   enum marktype typ;
@@ -1436,8 +1550,8 @@ POE_ERR cmd_copy_mark(cmd_ctx* ctx)
     nc = c2-c1+1;
     _savelines_other(buf, row, 1);
     if (l1 == l2) {
-     //int srclinelen = buffer_line_length(markbuf, l1);
-     buffer_copyinsertchars(buf, row, col, markbuf, l1, c1, nc, true);
+      //int srclinelen = buffer_line_length(markbuf, l1);
+      buffer_copyinsertchars(buf, row, col, markbuf, l1, c1, nc, true);
     }
     else if (markbuf != buf || row > l2) {
       // can safely do it the easy way
@@ -1601,7 +1715,7 @@ POE_ERR cmd_overlay_block(cmd_ctx* ctx)
     nc = c2-c1+1;
     _savelines_other(buf, row, nl);
     for (i = 0; i < nl; i++)
-     buffer_copyoverlaychars(buf, row+i, col, markbuf, l1+i, c1, nc, true);
+      buffer_copyoverlaychars(buf, row+i, col, markbuf, l1+i, c1, nc, true);
     err = POE_ERR_OK;
     break;
   case Marktype_Line: case Marktype_Char: 
@@ -1713,24 +1827,24 @@ POE_ERR cmd_execute(cmd_ctx* ctx)
   pivec_append(&tokens, CMD_NULL);
 
   if (err == POE_ERR_OK) {
-	// figure out our new context for the stuff we're about to interpret
-	cmd_ctx cmdline_ctx;
-	cmdline_ctx.src_is_commandline = true;
-	cmdline_ctx.save_commandline = false;
-	update_context(&cmdline_ctx);
-	cmdline_ctx.cmdseq = &tokens;
-	cmdline_ctx.pc = 0;
-	//logmsg("interpreting command seq");
-	err = interpret_command_seq(&cmdline_ctx);
-	// For most commands we should clear the command line afterwards.
-	// But not all commands, and not if there was an error
-	if (err == POE_ERR_OK && !cmdline_ctx.save_commandline) {
-	  cmd_erase_command_line(ctx);
-	}
+    // figure out our new context for the stuff we're about to interpret
+    cmd_ctx cmdline_ctx;
+    cmdline_ctx.src_is_commandline = true;
+    cmdline_ctx.save_commandline = false;
+    update_context(&cmdline_ctx);
+    cmdline_ctx.cmdseq = &tokens;
+    cmdline_ctx.pc = 0;
+    //logmsg("interpreting command seq");
+    err = interpret_command_seq(&cmdline_ctx);
+    // For most commands we should clear the command line afterwards.
+    // But not all commands, and not if there was an error
+    if (err == POE_ERR_OK && !cmdline_ctx.save_commandline) {
+      cmd_erase_command_line(ctx);
+    }
   }
   else {
-	//logmsg("got error in parse or validate");
-	view_move_cursor_to(cmdview, 0, parse_pos);
+    //logmsg("got error in parse or validate");
+    view_move_cursor_to(cmdview, 0, parse_pos);
   }
 
   cstr_destroy(&cmd_text);
@@ -1751,13 +1865,13 @@ POE_ERR cmd_edit(cmd_ctx* ctx)
     wins_cur_nextbuffer();
   }
   else {
-	PROFILEPTR profile = buffer_get_profile(buf); 
+    PROFILEPTR profile = buffer_get_profile(buf); 
     bool file_tab_expand = profile->tabexpand;
     if (exp_mode != NULL) {
-     if (strcasecmp(exp_mode, "notabs") == 0)
-       file_tab_expand = true;
-     else if (strcasecmp(exp_mode, "tabs") == 0)
-       file_tab_expand = false;
+      if (strcasecmp(exp_mode, "notabs") == 0)
+        file_tab_expand = true;
+      else if (strcasecmp(exp_mode, "tabs") == 0)
+        file_tab_expand = false;
     }
     cstr tmp_filename;
     cstr_initstr(&tmp_filename, filename);
@@ -1770,7 +1884,7 @@ POE_ERR cmd_edit(cmd_ctx* ctx)
       editbuf = unnamed_buffer;
     }
     else if (cstr_comparestri(&tmp_filename, ".keys") == 0) {
-	  load_current_key_definitions(keys_buffer, profile);
+      load_current_key_definitions(keys_buffer, profile);
       buffer_setflags(keys_buffer, BUF_FLG_VISIBLE);
       editbuf = keys_buffer;
     }
@@ -1826,8 +1940,8 @@ POE_ERR cmd_quit(cmd_ctx* ctx)
   else if (buffer_tstflags(databuf, BUF_FLG_DIRTY)) {
     enum confirmation_t confirmed = get_confirmation("Do you really want to quit? Type y or n");
     if (confirmed == confirmation_y) {
-     wins_hidebuffer(databuf);
-     buffer_free(databuf);
+      wins_hidebuffer(databuf);
+      buffer_free(databuf);
     }
   }
   else {
@@ -1850,32 +1964,32 @@ POE_ERR cmd_save(cmd_ctx* ctx)
   if (buffer_tstflags(databuf, BUF_FLG_INTERNAL)) {
     const char* bufname = buffer_name(databuf);
     if (strcasecmp(bufname, ".UNNAMED") == 0)
-     err = POE_ERR_CANNOT_NAME_UNNAMED;
+      err = POE_ERR_CANNOT_NAME_UNNAMED;
     else
-     err = POE_ERR_CANNOT_SAVE_INTERNAL;
+      err = POE_ERR_CANNOT_SAVE_INTERNAL;
   }
   else {
     const char* filename = next_parm_str(ctx, (const char*)NULL);
     const char* exp_mode = next_parm_str(ctx, (const char*)NULL);
-	PROFILEPTR profile = buffer_get_profile(databuf);
+    PROFILEPTR profile = buffer_get_profile(databuf);
     bool file_blank_compress = profile->blankcompress;
     if (exp_mode != NULL) {
-     if (strcasecmp(exp_mode, "notabs") == 0)
-       file_blank_compress = true;
-     else if (strcasecmp(exp_mode, "tabs") == 0)
-       file_blank_compress = false;
+      if (strcasecmp(exp_mode, "notabs") == 0)
+        file_blank_compress = true;
+      else if (strcasecmp(exp_mode, "tabs") == 0)
+        file_blank_compress = false;
     }
     // Save it appropriately
     if (filename == NULL) {
-     err = buffer_save(databuf, NULL, file_blank_compress);
+      err = buffer_save(databuf, NULL, file_blank_compress);
     }
     else {
-     cstr tmp_filename;
-     cstr_initstr(&tmp_filename, filename);
-     cstr_trimleft(&tmp_filename, poe_iswhitespace);
-     cstr_trimright(&tmp_filename, poe_iswhitespace);
-     err = buffer_save(databuf, &tmp_filename, file_blank_compress);
-     cstr_destroy(&tmp_filename);
+      cstr tmp_filename;
+      cstr_initstr(&tmp_filename, filename);
+      cstr_trimleft(&tmp_filename, poe_iswhitespace);
+      cstr_trimright(&tmp_filename, poe_iswhitespace);
+      err = buffer_save(databuf, &tmp_filename, file_blank_compress);
+      cstr_destroy(&tmp_filename);
     }
   }
   CMD_RETURN(err);
@@ -2176,25 +2290,25 @@ POE_ERR cmd_set_tabs(cmd_ctx* ctx)
     t3--;
     int tab_step = t2-t1;
     //tabs_set(&default_tabstops, (t3%tab_step), tab_step, &tabstops);
-	struct tabstops_t tabs;
-	tabs_init(&tabs, (t3%tab_step), tab_step, &tabstops);
+    struct tabstops_t tabs;
+    tabs_init(&tabs, (t3%tab_step), tab_step, &tabstops);
     buffer_settabs(ctx->data_buf, &tabs);
-	tabs_destroy(&tabs);
+    tabs_destroy(&tabs);
     pivec_destroy(&tabstops);
   }
   else if (t1 >= 1 && t2 >= 1) {
     //tabs_set(&default_tabstops, t1-1, t2-t1, NULL);
-	struct tabstops_t tabs;
-	tabs_init(&tabs, t1-1, t2-t1, NULL);
+    struct tabstops_t tabs;
+    tabs_init(&tabs, t1-1, t2-t1, NULL);
     buffer_settabs(ctx->data_buf, &tabs);
-	tabs_destroy(&tabs);
+    tabs_destroy(&tabs);
   }
   else if (t1 >= 1) {
     //tabs_set(&default_tabstops, 0, t1, NULL);
-	struct tabstops_t tabs;
-	tabs_init(&tabs, 0, t1, NULL);
+    struct tabstops_t tabs;
+    tabs_init(&tabs, 0, t1, NULL);
     buffer_settabs(ctx->data_buf, &tabs);
-	tabs_destroy(&tabs);
+    tabs_destroy(&tabs);
   }
   else {
     err = POE_ERR_TABS;
@@ -2235,9 +2349,9 @@ POE_ERR cmd_qry_key(cmd_ctx* ctx)
   POE_ERR err = POE_ERR_OK;
   const char* keyname = next_parm_str(ctx, NULL);
   if (keyname == NULL) {
-	wins_set_message("Press a key to identify");
-	wins_repaint_all();
-	keyname = ui_get_key();
+    wins_set_message("Press a key to identify");
+    wins_repaint_all();
+    keyname = ui_get_key();
   }
   if (keyname != NULL) {
     cstr fmtted_def;
@@ -2247,10 +2361,10 @@ POE_ERR cmd_qry_key(cmd_ctx* ctx)
       _printf_cmdline(ctx, "%s", cstr_getbufptr(&fmtted_def));
       ctx->save_commandline = true;
     }
-	else {
-	  _printf_cmdline(ctx, "def %s = ", keyname);
-	  ctx->save_commandline = true;
-	}
+    else {
+      _printf_cmdline(ctx, "def %s = ", keyname);
+      ctx->save_commandline = true;
+    }
   }
   CMD_RETURN(err);
 }
@@ -2329,8 +2443,8 @@ POE_ERR cmd_set_tabexpand_size(cmd_ctx* ctx)
     err = POE_ERR_SET_VAL_UNK;
   }
   else {
-	PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
-	profile->tabexpand_size = tabsize;
+    PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
+    profile->tabexpand_size = tabsize;
   }
   CMD_RETURN(err);
 }
@@ -2506,13 +2620,13 @@ POE_ERR cmd_set_wrap(cmd_ctx* ctx)
   const char* parm = next_parm_str(ctx, NULL);
   PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
   if (parm == NULL)
-	err = POE_ERR_SET_VAL_UNK;
+    err = POE_ERR_SET_VAL_UNK;
   else if (strcasecmp(parm, "ON") == 0)
-	profile->autowrap = true;
+    profile->autowrap = true;
   else if (strcasecmp(parm, "OFF") == 0)
-	profile->autowrap = false;
+    profile->autowrap = false;
   else
-	err = POE_ERR_SET_VAL_UNK;
+    err = POE_ERR_SET_VAL_UNK;
   CMD_RETURN(err);
 }
 
@@ -2592,7 +2706,7 @@ POE_ERR cmd_define(cmd_ctx* ctx)
     keycmds[i] = pivec_get(ctx->cmdseq, ctx->pc+i);
   }
   defkey(profile, keyname, keycmds, nkeycmds);
-   free(keycmds);
+  free(keycmds);
   ctx->pc += i-1;
   CMD_RETURN(err);
 }
@@ -2611,7 +2725,7 @@ POE_ERR cmd_qry_chr(cmd_ctx* ctx)
 
 POE_ERR cmd_copy_to_command(cmd_ctx* ctx)
 {
-  CMD_ENTER_DATAONLY(ctx);
+  CMD_ENTER(ctx);
   struct line_t* line = buffer_get(ctx->data_buf, ctx->data_row);
   cmd_erase_command_line(ctx);
   buffer_insertstrn(ctx->cmd_buf, 0, 0, cstr_getbufptr(&line->txt), cstr_count(&line->txt), true);
@@ -2623,7 +2737,7 @@ POE_ERR cmd_copy_to_command(cmd_ctx* ctx)
 
 POE_ERR cmd_copy_from_command(cmd_ctx* ctx)
 {
-  CMD_ENTER_DATAONLY(ctx);
+  CMD_ENTER(ctx);
   struct line_t* line = buffer_get(ctx->cmd_buf, 0);
   buffer_insertblanklines(ctx->data_buf, ctx->data_row+1, 1, true);
   buffer_insertstrn(ctx->data_buf, ctx->data_row+1, 0, cstr_getbufptr(&line->txt), cstr_count(&line->txt), true);
@@ -2650,13 +2764,13 @@ POE_ERR cmd_set_oncommand(cmd_ctx* ctx)
   const char* parm = next_parm_str(ctx, NULL);
   PROFILEPTR profile = buffer_get_profile(ctx->targ_buf);
   if (parm == NULL)
-	err = POE_ERR_SET_VAL_UNK;
+    err = POE_ERR_SET_VAL_UNK;
   else if (strcasecmp(parm, "ON") == 0)
-	profile->oncommand = true;
+    profile->oncommand = true;
   else if (strcasecmp(parm, "OFF") == 0)
-	profile->oncommand = false;
+    profile->oncommand = false;
   else
-	err = POE_ERR_SET_VAL_UNK;
+    err = POE_ERR_SET_VAL_UNK;
   CMD_RETURN(err);
 }
 
@@ -2687,13 +2801,13 @@ POE_ERR cmd_cd(cmd_ctx* ctx)
   char achNewDir[PATH_MAX];
   getcwd(achNewDir, sizeof(achNewDir));
   if (strncmp(buffer_name(ctx->data_buf), ".DIR", 4) == 0) {
-	_dir(ctx->data_buf, achNewDir);
+    _dir(ctx->data_buf, achNewDir);
   }
   else {
-	cstr cstr_dirname;
-	cstr_initstr(&cstr_dirname, achNewDir);
-	buffer_chdir(ctx->data_buf, &cstr_dirname);
-	cstr_destroy(&cstr_dirname);
+    cstr cstr_dirname;
+    cstr_initstr(&cstr_dirname, achNewDir);
+    buffer_chdir(ctx->data_buf, &cstr_dirname);
+    cstr_destroy(&cstr_dirname);
   }
   CMD_RETURN(POE_ERR_OK);
 }
@@ -2704,10 +2818,10 @@ POE_ERR cmd_name(cmd_ctx* ctx)
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
   const char* pszName = next_parm_str(ctx, NULL);
   if (pszName != NULL) {
-	cstr cstr_name;
-	cstr_initstr(&cstr_name, pszName);
-	buffer_setbasename(ctx->data_buf, &cstr_name);
-	cstr_destroy(&cstr_name);
+    cstr cstr_name;
+    cstr_initstr(&cstr_name, pszName);
+    buffer_setbasename(ctx->data_buf, &cstr_name);
+    cstr_destroy(&cstr_name);
   }
   CMD_RETURN(POE_ERR_OK);
 }
@@ -2719,9 +2833,9 @@ POE_ERR cmd_name(cmd_ctx* ctx)
 // Command table
 ////////////////////////////////////////
 
-#define DEFCMD(func,...) {                          \
-    static const char* _cmdspec_[] = {__VA_ARGS__, NULL};  \
-    defcmd(_cmdspec_, func);                            \
+#define DEFCMD(func,...) {                                \
+    static const char* _cmdspec_[] = {__VA_ARGS__, NULL}; \
+    defcmd(_cmdspec_, func);                              \
   }
 
 void defcmds(void)
@@ -2832,7 +2946,7 @@ void defcmds(void)
   DEFCMD(cmd_pop_mark,                 "POP",         "MARK");
   DEFCMD(cmd_push_mark,                "PUSH",        "MARK");
                                                       
-  DEFCMD(cmd_exit,                     "QQUIT");      
+  DEFCMD(cmd_exit,                     "QQUIT");
   DEFCMD(cmd_quit,                     "QUIT");
                                                       
   DEFCMD(cmd_replace_mode,             "REPLACE",     "MODE");
