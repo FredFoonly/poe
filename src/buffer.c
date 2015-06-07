@@ -1031,15 +1031,11 @@ void buffer_setstrn(BUFFER buf, int line, int col, const char* s, int n, bool up
   VALIDATEBUFFER(buf);
   __check_line_exists(__func__, buf, line);
   struct line_t* l = _line(buf, line);
-  int linelen = cstr_count(&l->txt);
   int len = strnlen(s, n);
   _expand_to_col(buf, line, col+len);
   cstr_setstrn(&l->txt, col, s, len);
   buf->longest_line = max(buf->longest_line, cstr_count(&l->txt));
   buffer_setlineflags(buf, line, LINE_FLG_DIRTY);
-  int nadded = max(0, col+n-linelen);
-  if (upd_marks && nadded > 0)
-    marks_upd_insertedchars(buf, line, linelen, nadded);
   TRACE_EXIT;
 }
 
