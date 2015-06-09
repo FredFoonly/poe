@@ -1465,9 +1465,12 @@ POE_ERR cmd_delete_mark(cmd_ctx* ctx)
   CMD_ENTER_BND(ctx, wnd, view, buf, row, col);
   markstack_cur_seal();
   cmd_begin_mark(ctx);
+  POE_ERR err = markstack_cur_get_buffer(&buf);
+	if (err != POE_ERR_OK)
+		CMD_RETURN(err);
   enum marktype typ;
   int l1, c1, l2, c2;
-  POE_ERR err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
+  err = markstack_cur_get_bounds(&typ, &l1, &c1, &l2, &c2);
   if (err != POE_ERR_OK)
     CMD_RETURN(err); 
   switch (typ) {
@@ -1601,14 +1604,17 @@ POE_ERR cmd_copy_mark(cmd_ctx* ctx)
 POE_ERR cmd_move_mark(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx);
+	BUFFER orig_buf = ctx->data_buf;
+	VIEWPTR orig_view = ctx->data_view;
+	int orig_row = ctx->data_row, orig_col = ctx->data_col;
   markstack_cur_seal();
   POE_ERR err = cmd_copy_mark(ctx);
   if (err == POE_ERR_OK) {
     err = cmd_delete_mark(ctx);
     // cmd_delete_mark may switch us to the src buffer, so we need to
     // switch back.
-    wins_cur_switchbuffer(ctx->data_buf);
-    view_move_cursor_to(ctx->data_view, ctx->data_row, ctx->data_col);
+    wins_cur_switchbuffer(orig_buf);
+    view_move_cursor_to(orig_view, orig_row, orig_col);
   }
   CMD_RETURN(err);
 }
