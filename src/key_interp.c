@@ -239,8 +239,7 @@ POE_ERR wins_handle_key(const char* keyname)
   if (buffer_tstflags(ctx.targ_buf, BUF_FLG_CMDLINE)) {
     // first check cmd-ins/repl-keyname
     memset(ucKeyname, 0, sizeof(ucKeyname));
-    if (buffer_tstflags(ctx.targ_buf, BUF_FLG_CMDLINE))
-      strlcat(ucKeyname, "CMD-", sizeof(ucKeyname));
+		strlcat(ucKeyname, "CMD-", sizeof(ucKeyname));
     if (view_tstflags(ctx.targ_view, VIEW_FLG_INSERTMODE))
       strlcat(ucKeyname, "INS-", sizeof(ucKeyname));
     else

@@ -1553,7 +1553,6 @@ POE_ERR cmd_copy_mark(cmd_ctx* ctx)
     nc = c2-c1+1;
     _savelines_other(buf, row, 1);
     if (l1 == l2) {
-      //int srclinelen = buffer_line_length(markbuf, l1);
       buffer_copyinsertchars(buf, row, col, markbuf, l1, c1, nc, true);
     }
     else if (markbuf != buf || row > l2) {
@@ -1601,6 +1600,11 @@ POE_ERR cmd_copy_mark(cmd_ctx* ctx)
 }
 
 
+// This fails badly if the mark overlaps the destination.  Solution is
+// to copy the mark lines to a temp buffer, delete the mark (without
+// updating the cursor position), then insert the mark contents at the
+// cursor position.  Probably need to factor out the kernels of the
+// cmd_copy_mark and cmd_delete_mark routines
 POE_ERR cmd_move_mark(cmd_ctx* ctx)
 {
   CMD_ENTER_DATAONLY(ctx);
@@ -1608,6 +1612,10 @@ POE_ERR cmd_move_mark(cmd_ctx* ctx)
 	VIEWPTR orig_view = ctx->data_view;
 	int orig_row = ctx->data_row, orig_col = ctx->data_col;
   markstack_cur_seal();
+	MARK curmark = markstack_current();
+	if (curmark != NULL && mark_hittest_point(curmark, orig_buf, orig_row, orig_col, 0, 0)) {
+		CMD_RETURN(POE_ERR_SRC_DEST_CONFLICT);
+	}
   POE_ERR err = cmd_copy_mark(ctx);
   if (err == POE_ERR_OK) {
     err = cmd_delete_mark(ctx);

@@ -26,8 +26,8 @@ int mark_tstflags(MARK mark, int flags);
 
 POE_ERR mark_get_buffer(MARK mark, BUFFER* buf);
 POE_ERR mark_get_type(MARK mark, enum marktype* typ);
-POE_ERR mark_get_start(MARK mark, int * line, int* col);
-POE_ERR mark_get_end(MARK mark, int * line, int* col);
+POE_ERR mark_get_start(MARK mark, int* line, int* col);
+POE_ERR mark_get_end(MARK mark, int* line, int* col);
 POE_ERR mark_get_bounds(MARK mark, enum marktype *typ, int* l1, int* c1, int* l2, int* c2);
 
 POE_ERR mark_bookmark(MARK mark, enum marktype typ, BUFFER buf, int line, int col);
