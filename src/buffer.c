@@ -1143,7 +1143,16 @@ POE_ERR buffer_copyinsertchars(BUFFER dstbuf, int dstline, int dstcol,
   _expand_to_line(dstbuf, dstline);
   int srclinelen = buffer_line_length(srcbuf, srcline);
   const char* srctxt = buffer_getbufptr(srcbuf, srcline);
-  buffer_insertstrn(dstbuf, dstline, dstcol, srctxt+min(srccol, srclinelen), min(n, srclinelen-srccol), upd_marks);
+	int clipped_srccol = min(srccol, srclinelen);
+	int clipped_nchars = min(n, srclinelen-srccol);
+	if (dstbuf == srcbuf && dstline == srcline) {
+		char* tmp = strlsave(srctxt+clipped_srccol, clipped_nchars);
+		buffer_insertstrn(dstbuf, dstline, dstcol, tmp, clipped_nchars, upd_marks);
+		free(tmp);
+	}
+	else {
+		buffer_insertstrn(dstbuf, dstline, dstcol, srctxt+clipped_srccol, clipped_nchars, upd_marks);
+	}
   TRACE_RETURN(POE_ERR_OK);
 }
 
