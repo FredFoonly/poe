@@ -215,7 +215,7 @@ void _init_curses_keys()
   int isxterm = strstr(term, "xterm") != NULL;
   int isrxvt = strstr(term, "rxvt") != NULL;
 
-  if (isrxvt) {
+  if (isrxvt || isxterm) {
     int i;
     char termseq[32];
     // define various flavors of alted letters
