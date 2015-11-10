@@ -525,6 +525,7 @@ void wins_cur_switchbuffer(BUFFER buf)
   _window_stash_view(pwin);
   pwin->data_buf = buf;
   _window_restore_view(pwin);
+	wins_resize();
   _wins_curr_chdir();
   TRACE_EXIT;
 }
@@ -553,6 +554,7 @@ void _window_hide_buffer(WINPTR pwin, BUFFER buf)
     _window_restore_view(pwin);
   }
   _window_forget_buffer(pwin, buf);
+	wins_resize();
   TRACE_EXIT;
 }
 
