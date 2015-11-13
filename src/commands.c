@@ -151,9 +151,9 @@ command_handler_t __lookup_command_trie(struct cmddef_trie_t* trienode,
 			struct cmddef_trie_t* thatnode = pChildpair->node;
 			if (pPrevchildpair != NULL) {
 				struct cmddef_trie_pair_t tmp;
-				memcpy(&tmp, pChildpair, sizeof(struct cmddef_trie_pair_t));
-				memcpy(pChildpair, pPrevchildpair, sizeof(struct cmddef_trie_pair_t));
-				memcpy(pPrevchildpair, &tmp, sizeof(struct cmddef_trie_pair_t));
+				memmove(&tmp, pChildpair, sizeof(struct cmddef_trie_pair_t));
+				memmove(pChildpair, pPrevchildpair, sizeof(struct cmddef_trie_pair_t));
+				memmove(pPrevchildpair, &tmp, sizeof(struct cmddef_trie_pair_t));
 			}
       cur_hndlr = __lookup_command_trie(thatnode, cmdseq, pc+1, args_idx,
 																				cur_hndlr, cur_args_idx);

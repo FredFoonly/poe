@@ -72,7 +72,7 @@ void cstr_initfrom(struct cstr_t* dst, const struct cstr_t* src)
   TRACE_ENTER;
   cstr_init(dst, src->cap);
   if (src->ct > 0)
-    memcpy(dst->elts, src->elts, src->ct * sizeof(char));
+    memmove(dst->elts, src->elts, src->ct * sizeof(char));
   dst->ct = src->ct;
   TRACE_EXIT;
 }
@@ -439,7 +439,7 @@ void cstr_appendm(struct cstr_t* v, int n, const char* a)
       v->cap <<= 1;
     _cstr_realloc(v, v->cap);
   }
-  memcpy(v->elts+v->ct, a, n*sizeof(char));
+  memmove(v->elts+v->ct, a, n*sizeof(char));
   v->ct += n;
   TRACE_EXIT;
 }
@@ -463,7 +463,7 @@ void cstr_insertm(struct cstr_t* v, int i, int n, const char* a)
   }
   if (i <= v->ct) {
     memmove(v->elts+i+n, v->elts+i, (v->ct-i)*sizeof(char));
-	memcpy(v->elts+i, a, n*sizeof(char));
+	memmove(v->elts+i, a, n*sizeof(char));
 	v->ct += n;
 	v->elts[v->ct] = '\0';
   }
@@ -669,7 +669,7 @@ int cstr_trimleft(struct cstr_t* str, char_pred_t spacepred)
   char* elts = str->elts;
   for (i = 0; i < len && (*spacepred)(elts[i]); i++)
     ;
-  memcpy(str->elts, str->elts+i, len-i+1);
+  memmove(str->elts, str->elts+i, len-i+1);
   int nchars_removed = i;
   str->ct -= nchars_removed;
   TRACE_RETURN(nchars_removed);
@@ -756,7 +756,7 @@ void _cstr_realloc(struct cstr_t* v, size_t newcap)
   char* old = (char*)v->elts;
   v->elts = calloc(newcap+1, sizeof(char));
   v->cap = newcap;
-  memcpy(v->elts, old, v->ct);
+  memmove(v->elts, old, v->ct);
   free(old);
   TRACE_EXIT;
 }

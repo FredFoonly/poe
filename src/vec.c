@@ -51,7 +51,7 @@ void pivec_initfromarr(struct pivec_t* dst, const intptr_t* src, size_t n)
   TRACE_ENTER;
   pivec_init(dst, max(0,n));
   if (n > 0)
-    memcpy(dst->elts, src, n * sizeof(intptr_t));
+    memmove(dst->elts, src, n * sizeof(intptr_t));
   dst->ct = n;
   TRACE_EXIT;
 }
@@ -202,7 +202,7 @@ int pivec_appendm(struct pivec_t* v, int n, intptr_t* a)
       v->cap <<= 1;
     v->elts = reallocarray(v->elts, v->cap, sizeof(intptr_t));
   }
-  memcpy(v->elts+pos, a, n*sizeof(intptr_t));
+  memmove(v->elts+pos, a, n*sizeof(intptr_t));
   v->ct += n;
   TRACE_RETURN(pos);
 }
@@ -212,7 +212,7 @@ void pivec_insertm(struct pivec_t* v, int i, int n, intptr_t* a)
 {
   TRACE_ENTER;
   if (n <= 0)
-	TRACE_EXIT;
+		TRACE_EXIT;
 #ifdef DPOE_DBG_LIM
   if (i > v->ct)
     poe_err(1, "pivec_insertm %d/%d", i, v->ct);
@@ -226,8 +226,8 @@ void pivec_insertm(struct pivec_t* v, int i, int n, intptr_t* a)
   }
   if (i <= v->ct) {
     memmove(v->elts+i+n, v->elts+i, (v->ct-i)*sizeof(intptr_t));
-	memcpy(v->elts+i, a, n*sizeof(intptr_t));
-	v->ct += n;
+		memmove(v->elts+i, a, n*sizeof(intptr_t));
+		v->ct += n;
   }
   TRACE_EXIT;
 }
@@ -285,7 +285,7 @@ void vec_initfrom(struct vec_t* dst, const struct vec_t* src)
   TRACE_ENTER;
   vec_init(dst, src->eltsize, src->cap);
   if (src->ct > 0)
-    memcpy(dst->elts, src->elts, src->ct*src->eltsize);
+    memmove(dst->elts, src->elts, src->ct*src->eltsize);
   dst->ct = src->ct;
   TRACE_EXIT;
 }
@@ -374,7 +374,7 @@ void vec_set(struct vec_t* v, int i, void* a)
   if (i >= v->ct)
     poe_err(1, "vec_set %d/%d", i, v->ct);
 #endif
-  memcpy(v->elts + (v->ct * v->eltsize), a, v->eltsize);
+  memmove(v->elts + (v->ct * v->eltsize), a, v->eltsize);
   TRACE_EXIT;
 }
 
@@ -388,7 +388,7 @@ int vec_append(struct vec_t* v, void* a)
     v->elts = reallocarray(v->elts, v->cap, v->eltsize);
   }
   int pos = v->ct;
-  memcpy(v->elts + (pos * v->eltsize), a, v->eltsize);
+  memmove(v->elts + (pos * v->eltsize), a, v->eltsize);
   v->ct++;
   TRACE_RETURN(pos);
 }
@@ -408,7 +408,7 @@ void vec_insert(struct vec_t* v, int i, void* a)
   }
   if (i <= v->ct) {
     memmove(v->elts + ((i+1) * v->eltsize), v->elts + (i * v->eltsize), (v->ct - i) * v->eltsize);
-	memcpy(v->elts + (i * v->eltsize), a, v->eltsize);
+	memmove(v->elts + (i * v->eltsize), a, v->eltsize);
 	v->ct++;
   }
   TRACE_EXIT;
@@ -443,7 +443,7 @@ int vec_appendm(struct vec_t* v, int n, void* a)
       v->cap <<= 1;
     v->elts = reallocarray(v->elts, v->cap, v->eltsize);
   }
-  memcpy(v->elts + pos*v->eltsize, a, n*v->eltsize);
+  memmove(v->elts + pos*v->eltsize, a, n*v->eltsize);
   v->ct += n;
   TRACE_RETURN(pos);
 }
@@ -467,7 +467,7 @@ void vec_insertm(struct vec_t* v, int i, int n, void* a)
   }
   if (i <= v->ct) {
     memmove(v->elts + (i+n)*v->eltsize, v->elts + i*v->eltsize, (v->ct-i)*v->eltsize);
-	memcpy(v->elts + i*v->eltsize, a, n*v->eltsize);
+	memmove(v->elts + i*v->eltsize, a, n*v->eltsize);
 	v->ct += n;
   }
   TRACE_EXIT;
