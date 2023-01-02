@@ -657,6 +657,8 @@ POE_ERR _cmd_char(cmd_ctx* ctx, char chr)
   int insert_mode = view_get_insertmode(ctx->targ_view);
   if (iscntrl(chr))
     chr = ' ';
+  if (row < 0 || row >= buffer_count(buf))
+    CMD_RETURN(POE_ERR_INVALID_LINE);
   if (insert_mode) {
     buffer_insert(buf, row, col, chr, true);
   }
@@ -674,7 +676,7 @@ POE_ERR _cmd_char(cmd_ctx* ctx, char chr)
       update_context(ctx);
       xtract_targ_context(ctx, &wnd, &view, &buf, &row, &col);
       if (col > 0 && buffer_getchar(buf, row, col-1) != ' ')
-        buffer_insert(buf, row, col, ' ', true);
+	buffer_insert(buf, row, col, ' ', true);
     }
   }
   CMD_RETURN(err);

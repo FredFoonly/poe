@@ -50,6 +50,7 @@ const char* poe_err_message(POE_ERR err)
   case POE_ERR_WRITE_PROTECTED: rval = "Attempted to write to a write-protected file"; break;
   case POE_ERR_NO_MARKS_SAVED: rval = "No marks saved"; break;
   case POE_ERR_SET_VAL_UNK: rval = "Attempted to SET an unrecognized value for this option"; break;  
+  case POE_ERR_INVALID_LINE: rval = "Cursor is not on a line"; break;
   default:
     snprintf(errmsg, sizeof(errmsg), "Error %d", err);
     rval = errmsg;

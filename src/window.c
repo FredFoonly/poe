@@ -179,6 +179,7 @@ void _init_curses()
   raw();
   //logmsg("keypad");
   keypad(stdscr, true);
+  meta(stdscr, true);
   //logmsg("noecho");
   noecho();
   //logmsg("atexit");

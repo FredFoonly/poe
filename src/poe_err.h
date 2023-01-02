@@ -44,4 +44,4 @@ const char* poe_err_message(POE_ERR err);
 #define POE_ERR_WRITE_PROTECTED      (38) /* attempted to write to a write-protected file */
 #define POE_ERR_NO_MARKS_SAVED       (39) /* no marks to pop */
 #define POE_ERR_SET_VAL_UNK          (40) /* set of unknown option value */
-
+#define POE_ERR_INVALID_LINE         (41) /* cursor on invalid line (e.g. there aren't any lines yet) */
